@@ -1,0 +1,25 @@
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OhMyOpenCode
+.omo/
+!.omo/rules/
+!.omo/rules/**
+!.omo/plans/
+!.omo/plans/**
+!.omo/tasks/
+!.omo/tasks/**
+
+# OpenCode
+.opencode/
+
+# OS
+.DS_Store
+*.local
