@@ -1,0 +1,58 @@
+NeuralNetwork	avg_pool2d_backward	FLOAT_DTYPES	(4, 3, 32, 32),(8, 16, 28, 28),(2, 4, 15, 15),(1, 1, 7, 7),(1, 64, 56, 56),(2, 8, 16, 16),(2, 8, 16, 20)	test_reduction_ops.py
+NeuralNetwork	batch_norm	FLOAT_DTYPES	(16, 3),(32, 32, 32),(8, 32, 224, 224),(2050, 16, 32, 32),(8, 16, 3, 224, 224)	test_norm_ops.py
+NeuralNetwork	batch_norm_backward	FLOAT_DTYPES	(16, 3),(32, 32, 32),(8, 32, 224, 224),(2050, 16, 32, 32),(8, 16, 3, 224, 224)	test_norm_ops.py
+NeuralNetwork	celu	FLOAT_DTYPES	POINTWISE_SHAPES	test_unary_pointwise_ops.py
+NeuralNetwork	celu_	FLOAT_DTYPES	POINTWISE_SHAPES	test_unary_pointwise_ops.py
+NeuralNetwork	constant_pad_nd	无单独测试
+NeuralNetwork	dropout	FLOAT_DTYPES	SPECIAL_SHAPES	test_special_ops.py
+NeuralNetwork	dropout_backward	FLOAT_DTYPES	SPECIAL_SHAPES	test_special_ops.py
+NeuralNetwork	elu	FLOAT_DTYPES	POINTWISE_SHAPES	test_unary_pointwise_ops.py
+NeuralNetwork	elu_	FLOAT_DTYPES	POINTWISE_SHAPES	test_unary_pointwise_ops.py
+NeuralNetwork	elu_backward	FLOAT_DTYPES	POINTWISE_SHAPES	test_unary_pointwise_ops.py
+NeuralNetwork	embedding	FLOAT_DTYPES	N/A	test_special_ops.py
+NeuralNetwork	embedding_backward	FLOAT_DTYPES	N/A	test_special_ops.py
+NeuralNetwork	flash_attention_forward	torch.float16, torch.bfloat16	(batch=1, num_head=1, q_seq_len=128, kv_seq_len=2048), (batch=4, num_head=8, q_seq_len=1024, kv_seq_len=128), (batch=4, num_head=8, q_seq_len=17, kv_seq_len=1030)	test_attention_ops.py	
+NeuralNetwork	flash_attn_varlen_func	torch.float16, torch.bfloat16	seq_lens=[(1, 1328), (5, 18), (129, 463)],num_heads=[(4, 4), (8, 2), (16, 2)],head_size=[128, 192, 256],block_size=32	test_attention_ops.py
+NeuralNetwork	gelu	FLOAT_DTYPES	POINTWISE_SHAPES	test_unary_pointwise_ops.py
+NeuralNetwork	gelu_	FLOAT_DTYPES	POINTWISE_SHAPES	test_unary_pointwise_ops.py
+NeuralNetwork	gelu_backward	FLOAT_DTYPES	POINTWISE_SHAPES	test_unary_pointwise_ops.py
+NeuralNetwork	glu	FLOAT_DTYPES	POINTWISE_SHAPES	test_unary_pointwise_ops.py
+NeuralNetwork	glu_backward	FLOAT_DTYPES	POINTWISE_SHAPES	test_unary_pointwise_ops.py
+NeuralNetwork	group_norm	FLOAT_DTYPES	(16, 3, 16, 16, 1),(32, 32, 32, 32, 8),(1, 32, 32, 32, 8),(1, 32, 32, 32, 16),(1, 64, 32, 32, 16),(1, 64, 32, 32, 32),(1, 64, 32, 32, 64)	test_norm_ops.py
+NeuralNetwork	group_norm_backward	FLOAT_DTYPES	(16, 3, 16, 16, 1),(32, 32, 32, 32, 8),(1, 32, 32, 32, 8),(1, 32, 32, 32, 16),(1, 64, 32, 32, 16),(1, 64, 32, 32, 32),(1, 64, 32, 32, 64)	test_norm_ops.py
+NeuralNetwork	layer_norm	FLOAT_DTYPES	(200, 36),(4096, 100),(1, 40999),(100, 40499),(4096, 256)	test_norm_ops.py
+NeuralNetwork	log_sigmoid	FLOAT_DTYPES	POINTWISE_SHAPES	test_unary_pointwise_ops.py
+NeuralNetwork	log_softmax	FLOAT_DTYPES	REDUCTION_SHAPES	test_reduction_ops.py
+NeuralNetwork	mse_loss	FLOAT_DTYPES	REDUCTION_SHAPES	test_reduction_ops.py
+NeuralNetwork	nll_loss2d_backward	无单独测试
+NeuralNetwork	nll_loss2d_forward	无单独测试
+NeuralNetwork	nll_loss_backward	无单独测试
+NeuralNetwork	nll_loss_forward	无单独测试
+NeuralNetwork	pad	FLOAT_DTYPES	[1024, 1024], [64, 64, 64, 64]	test_special_ops.py
+NeuralNetwork	relu	FLOAT_DTYPES	POINTWISE_SHAPES	test_unary_pointwise_ops.py
+NeuralNetwork	relu_	FLOAT_DTYPES	POINTWISE_SHAPES	test_unary_pointwise_ops.py
+NeuralNetwork	rms_norm	FLOAT_DTYPES	(1, 2), (4096, 256), (200, 40999, 3)	test_norm_ops.py
+NeuralNetwork	sigmoid	FLOAT_DTYPES	POINTWISE_SHAPES	test_unary_pointwise_ops.py
+NeuralNetwork	sigmoid_	FLOAT_DTYPES	POINTWISE_SHAPES	test_unary_pointwise_ops.py
+NeuralNetwork	sigmoid_backward	FLOAT_DTYPES	POINTWISE_SHAPES	test_unary_pointwise_ops.py
+NeuralNetwork	silu	FLOAT_DTYPES	POINTWISE_SHAPES	test_unary_pointwise_ops.py
+NeuralNetwork	silu_	FLOAT_DTYPES	POINTWISE_SHAPES	test_unary_pointwise_ops.py
+NeuralNetwork	silu_backward	FLOAT_DTYPES	POINTWISE_SHAPES	test_unary_pointwise_ops.py
+NeuralNetwork	softmax	FLOAT_DTYPES	(1, 256), (4096, 256), (200, 2560, 3)	test_reduction_ops.py
+NeuralNetwork	softplus	FLOAT_DTYPES	POINTWISE_SHAPES	test_unary_pointwise_ops.py
+NeuralNetwork	tan	FLOAT_DTYPES	POINTWISE_SHAPES	test_unary_pointwise_ops.py
+NeuralNetwork	tan_	FLOAT_DTYPES	POINTWISE_SHAPES	test_unary_pointwise_ops.py
+NeuralNetwork	threshold	FLOAT_DTYPES	POINTWISE_SHAPES	test_binary_pointwise_ops.py
+NeuralNetwork	threshold_backward	FLOAT_DTYPES	POINTWISE_SHAPES	test_binary_pointwise_ops.py
+NeuralNetwork	upsample_nearest2d	FLOAT_DTYPES	(32, 16, 128, 128),(15, 37, 256, 256),(3, 5, 127, 127),(128, 192, 42, 51),(3, 7, 1023, 1025)	test_special_ops.py
+NeuralNetwork	weight_norm_interface	无单独测试
+NeuralNetwork	weight_norm_interface_backward	无单独测试
+
+
+POINTWISE_SHAPES	[(), (1,), (1024, 1024), (20, 320, 15), (16, 128, 64, 60), (16, 7, 57, 32, 29)]
+
+FLOAT_DTYPES = PRIMARY_FLOAT_DTYPES + [torch.bfloat16]
+PRIMARY_FLOAT_DTYPES = [torch.float16, torch.float32]
+
+REDUCTION_SHAPES = [(1, 2), (4096, 256), (200, 40999, 3)]
+SPECIAL_SHAPES = [(1,), (1024, 1024), (20, 320, 15), (16, 128, 64, 1280), (16, 7, 57, 32, 29)]

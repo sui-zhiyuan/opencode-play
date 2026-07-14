@@ -1,0 +1,25 @@
+fdiv	float32	test_binary_shape
+floor	float32,float64	test_unary_shape
+fma	float32,float64	(128,)
+log	float32,float64	test_unary_shape
+log2	float32,float64	test_unary_shape
+maximum	float16,float32	(1,)
+minimum	float16,float32	(1,)
+mul	dtypes_with_bfloat16	(128,)
+rsqrt	float32	(128,)
+sigmoid	无测试
+sin	float32,float64	test_unary_shape
+softmax	float16，float32,float64	(64, 64, 64), (32, 32, 32), (16, 16, 16)	test_dot 间接测试
+sqrt	float32,float64	test_unary_shape
+sqrt_rn	float32	(128,)
+sub	dtypes_with_bfloat16	(128,)
+umulhi	int32	(128,)
+argmax	dtypes_with_bfloat16	(1,1024), (2,32), (4,32), (4,128), (2,32,16), (32,2,16), (32,16,2)	test_reduce1d 间接测试
+argmin	dtypes_with_bfloat16	(1,1024), (2,32), (4,32), (4,128), (2,32,16), (32,2,16), (32,16,2)	test_reduce1d 间接测试
+
+
+test_core.py
+test_binary_shape = [(128,)]
+test_unary_shape = [(128,)]
+
+dtypes_with_bfloat16 = int8,uint8,int16,uint16,int32,uint32,int64,uint64,float16,float32,float64,bfloat16,
