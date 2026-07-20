@@ -44,6 +44,10 @@ ahk_snippet = '''
 ^j::Send "{Blind}{Down}"
 ^k::Send "{Blind}{Up}"
 ^l::Send "{Blind}{Right}"
+^+h::Send "{Blind}+{Left}"
+^+j::Send "{Blind}+{Down}"
+^+k::Send "{Blind}+{Up}"
+^+l::Send "{Blind}+{Right}"
 '''
 
 
@@ -157,11 +161,11 @@ note = "also available as Ctrl+G Ctrl+F"
 
 [[shortcuts.code_editing]]
 key = "Ctrl+E Ctrl+D" 
-function = "foDmat_document"
+function = "format_document"
 editors = ["all"]
 
 [[shortcuts.code_editing]]
-key = "Ctrl+E Ctrl+R"
+key = "Ctrl+E Ctrl+C"
 function = "toggle_line_comment"
 note = "also available as standalone Ctrl+/"
 editors = ["all"]
@@ -187,6 +191,30 @@ function = "unfold_all"
 editors = ["all"]
 
 [[shortcuts.code_editing]]
+key = "Ctrl+E Left"
+function = "select_current_word"
+note = "via AHK: Ctrl+E Ctrl+H → IDE receives Ctrl+E Left"
+editors = ["all"]
+
+[[shortcuts.code_editing]]
+key = "Ctrl+E Down"
+function = "select_current_line"
+note = "via AHK: Ctrl+E Ctrl+J → IDE receives Ctrl+E Down"
+editors = ["all"]
+
+[[shortcuts.code_editing]]
+key = "Ctrl+E Up"
+function = "select_current_block"
+note = "via AHK: Ctrl+E Ctrl+K → IDE receives Ctrl+E Up"
+editors = ["all"]
+
+[[shortcuts.code_editing]]
+key = "Ctrl+E Right"
+function = "select_current_function"
+note = "via AHK: Ctrl+E Ctrl+L → IDE receives Ctrl+E Right"
+editors = ["all"]
+
+[[shortcuts.code_editing]]
 key = "Ctrl+E Ctrl+F"
 function = "replace_in_file"
 note = "Ctrl+H unavailable (direction key)"
@@ -203,6 +231,18 @@ function = "quick_fix"
 note = "Show Intention Actions in JetBrains"
 editors = ["all"]
 
+[[shortcuts.code_editing]]
+key = "Ctrl+E Ctrl+."
+function = "force_auto_complete"
+note = "force trigger IntelliSense / code completion"
+editors = ["all"]
+
+[[shortcuts.code_editing]]
+key = "Ctrl+E Ctrl+A"
+function = "swap_selection_anchor"
+note = "swap cursor to selection's other end; use with Shift+Ctrl+HJKL to fine-tune both boundaries"
+editors = ["all"]
+
 # --- Window/View (Ctrl+W) ---
 
 [[shortcuts.window_view]]
@@ -213,8 +253,8 @@ editors = ["all"]
 
 [[shortcuts.window_view]]
 key = "Ctrl+W Ctrl+N"
-function = "new_file"
-note = "also available as standalone Ctrl+N"
+function = "advanced_create_file"
+note = "specify path/filename first, then create (Advanced New File pattern)"
 editors = ["all"]
 
 [[shortcuts.window_view]]
@@ -280,6 +320,34 @@ key = "Ctrl+R Ctrl+B"
 function = "toggle_breakpoint"
 editors = ["all"]
 
+[[shortcuts.run_debug]]
+key = "Ctrl+1"
+function = "step_into"
+note = "extremely frequent; overrides VS Code focus group 1"
+editors = ["all"]
+
+[[shortcuts.run_debug]]
+key = "Ctrl+2"
+function = "step_over"
+note = "overrides VS Code focus group 2"
+editors = ["all"]
+
+[[shortcuts.run_debug]]
+key = "Ctrl+3"
+function = "step_out"
+note = "overrides VS Code focus group 3"
+editors = ["all"]
+
+[[shortcuts.run_debug]]
+key = "Ctrl+4"
+function = "stop_debug"
+editors = ["all"]
+
+[[shortcuts.run_debug]]
+key = "Ctrl+5"
+function = "continue_execution"
+editors = ["all"]
+
 # --- Navigation (Ctrl+G) ---
 
 [[shortcuts.navigation]]
@@ -289,70 +357,60 @@ note = "double-press self-reference"
 editors = ["all"]
 
 [[shortcuts.navigation]]
-key = "Ctrl+G Ctrl+F"
+key = "Ctrl+G Ctrl+W"
 function = "go_to_file"
 note = "VS Code/Zed/Sublime: Quick Open. JetBrains: Search Everywhere (Files tab)"
 editors = ["all"]
 
 [[shortcuts.navigation]]
-key = "Ctrl+G Ctrl+R"
+key = "Ctrl+G Ctrl+E"
 function = "go_to_symbol"
 note = "replaces VS Code Ctrl+T (show all symbols)"
 editors = ["all"]
 
 [[shortcuts.navigation]]
-key = "Ctrl+G Ctrl+D"
-function = "go_to_definition"
+key = "Ctrl+G Ctrl+R"
+function = "go_to_everything"
+note = "VS Code: fuzzy symbol search. JetBrains: Search Everywhere (All / Go to Text)"
 editors = ["all"]
 
 [[shortcuts.navigation]]
-key = "Ctrl+G Ctrl+Shift+R"
-function = "find_references"
-editors = ["all"]
-
-[[shortcuts.navigation]]
-key = "Ctrl+G Ctrl+["
-function = "navigate_back"
-editors = ["all"]
-
-[[shortcuts.navigation]]
-key = "Ctrl+G Ctrl+]"
-function = "navigate_forward"
-editors = ["all"]
-
-[[shortcuts.navigation]]
-key = "Ctrl+G Ctrl+E"
+key = "Ctrl+G Ctrl+T"
 function = "command_palette"
 note = "VS Code: Ctrl+Shift+P. JetBrains: Ctrl+Shift+A (Find Action)"
+editors = ["all"]
+
+[[shortcuts.navigation]]
+key = "Ctrl+G Ctrl+S"
+function = "peek_inline_implementation"
+note = "Peek / Go to Implementation"
+editors = ["all"]
+
+[[shortcuts.navigation]]
+key = "Ctrl+G Ctrl+D"
+function = "peek_inline_document"
+note = "Quick Documentation / Hover inline"
+editors = ["all"]
+
+[[shortcuts.navigation]]
+key = "Ctrl+G Left"
+function = "navigate_back"
+note = "via AHK: Ctrl+G Ctrl+H → IDE receives Ctrl+G Left"
+editors = ["all"]
+
+[[shortcuts.navigation]]
+key = "Ctrl+G Right"
+function = "navigate_forward"
+note = "via AHK: Ctrl+G Ctrl+L → IDE receives Ctrl+G Right"
 editors = ["all"]
 
 # --- Refactoring (Ctrl+T) ---
 
 [[shortcuts.refactoring]]
-key = "Ctrl+T Ctrl+R"
-function = "rename_symbol"
-editors = ["all"]
-
-[[shortcuts.refactoring]]
-key = "Ctrl+T Ctrl+M"
-function = "extract_method"
-editors = ["JetBrains", "VS Code"]
-
-[[shortcuts.refactoring]]
-key = "Ctrl+T Ctrl+V"
-function = "extract_variable"
-editors = ["JetBrains", "VS Code"]
-
-[[shortcuts.refactPoring]]
-key = "Ctrl+T Ctrl+I"
-function = "inline"
-editors = ["JetBrains"]
-
-[[shortcuts.refactoring]]
 key = "Ctrl+T Ctrl+T"
 function = "refactor_this"
-note = "JetBrains Refactor This popup menu"
-editors = ["JetBrains"]
+note = "JetBrains Refactor This popup; VS Code: trigger refactoring suggestions"
+editors = ["all"]
 
 # ── Conflict Log ──────────────────────────────────────────────
 
