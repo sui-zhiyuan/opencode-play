@@ -1,0 +1,444 @@
+# Universal Keyboard Shortcut Mapping
+# Generated: 2026-07-20
+# Format: TOML — structured, human-readable, key-value native
+# Target Editors: VS Code, JetBrains, Zed, Atom, Sublime Text
+# Keyboard: HHKB (no F1-F12, no Home/End/PgUp/PgDn)
+
+[meta]
+keyboard = "HHKB"
+system_remap = "AutoHotKey"
+chord_convention = "second-stroke-prefers-ctrl"
+
+[meta.modifiers]
+ctrl = "primary, local, high-frequency"
+ctrl_shift = "same family, wider scope"
+ctrl_alt = "advanced, structural, less frequent"
+
+# ── Key Partition ─────────────────────────────────────────────
+
+[key_partition]
+
+[key_partition.universal]
+keys = ["Ctrl+A", "Ctrl+S", "Ctrl+Z", "Ctrl+X", "Ctrl+C", "Ctrl+V",
+        "Ctrl+F", "Ctrl+N", "Ctrl+P"]
+note = "never remap — universal muscle memory"
+
+# Removed from universal:
+#   Ctrl+O → use Ctrl+P (Quick Open) to open files instead
+#   Ctrl+Tab → use Ctrl+P (Quick Open) to switch tabs instead
+
+[key_partition.direction]
+layer = "system"
+engine = "AutoHotKey"
+
+[key_partition.direction.mapping]
+"Ctrl+H" = "left"
+"Ctrl+J" = "down"
+"Ctrl+K" = "up"
+"Ctrl+L" = "right"
+
+ahk_snippet = '''
+#Requires AutoHotkey v2.0
+#UseHook
+^h::Send "{Blind}{Left}"
+^j::Send "{Blind}{Down}"
+^k::Send "{Blind}{Up}"
+^l::Send "{Blind}{Right}"
+'''
+
+
+[[key_partition.chords_prefixes]]
+key = "Ctrl+E"
+category = "code_editing"
+
+[[key_partition.chords_prefixes]]
+key = "Ctrl+W"
+category = "window_view"
+
+[[key_partition.chords_prefixes]]
+key = "Ctrl+R"
+category = "run_debug"
+
+[[key_partition.chords_prefixes]]
+key = "Ctrl+G"
+category = "navigation"
+
+[[key_partition.chords_prefixes]]
+key = "Ctrl+T"
+category = "refactoring"
+
+[[key_partition.search]]
+key = "Ctrl+F"
+function = "find_in_file"
+
+[[key_partition.search]]
+key = "Ctrl+Shift+F"
+function = "find_in_project"
+
+[[key_partition.hhkb_nav]]
+key = "Ctrl+A"
+function = "line_start"
+
+[[key_partition.hhkb_nav]]
+key = "Alt+E"
+function = "line_end"
+note = "replaces Ctrl+E (now chords prefix)"
+
+[[key_partition.hhkb_nav]]
+key = "Alt+B"
+function = "word_left"
+
+[[key_partition.hhkb_nav]]
+key = "Alt+F"
+function = "word_right"
+
+[[key_partition.hhkb_nav]]
+key = "Alt+<"
+function = "file_start"
+
+[[key_partition.hhkb_nav]]
+key = "Alt+>"
+function = "file_end"
+
+[[key_partition.unavailable]]
+keys = ["Ctrl+H", "Ctrl+J", "Ctrl+K", "Ctrl+L"]
+reason = "AutoHotKey direction keys — do not use for shortcuts or chords second stroke"
+
+[[key_partition.unavailable]]
+keys = ["Ctrl+K"]
+reason = "also not available as chords prefix"
+
+[[key_partition.unavailable]]
+keys = ["Ctrl+Q", "Ctrl+M", "Ctrl+U", "Ctrl+D", "Ctrl+Y"]
+reason = "severe cross-editor conflicts — left untouched"
+
+# ── Shortcut Mappings ─────────────────────────────────────────
+
+# --- Universal (no prefix) ---
+
+[[shortcuts.universal]]
+key = "Ctrl+A"
+function = "select_all"
+
+[[shortcuts.universal]]
+key = "Ctrl+S"
+function = "save"
+
+[[shortcuts.universal]]
+key = "Ctrl+Z"
+function = "undo"
+
+[[shortcuts.universal]]
+key = "Ctrl+X"
+function = "cut"
+
+[[shortcuts.universal]]
+key = "Ctrl+C"
+function = "copy"
+
+[[shortcuts.universal]]
+key = "Ctrl+V"
+function = "paste"
+
+[[shortcuts.universal]]
+key = "Ctrl+F"
+function = "find_in_file"
+
+[[shortcuts.universal]]
+key = "Ctrl+Shift+F"
+function = "find_in_project"
+
+[[shortcuts.universal]]
+key = "Ctrl+N"
+function = "new_file"
+
+[[shortcuts.universal]]
+key = "Ctrl+P"
+function = "quick_open"
+note = "also available as Ctrl+G Ctrl+F"
+
+# --- Code Editing (Ctrl+E) ---
+
+[[shortcuts.code_editing]]
+key = "Ctrl+E Ctrl+F"
+function = "format_document"
+editors = ["all"]
+
+[[shortcuts.code_editing]]
+key = "Ctrl+E Ctrl+/"
+function = "toggle_line_comment"
+note = "also available as standalone Ctrl+/"
+editors = ["all"]
+
+[[shortcuts.code_editing]]
+key = "Ctrl+E Ctrl+Shift+/"
+function = "toggle_block_comment"
+editors = ["all"]
+
+[[shortcuts.code_editing]]
+key = "Ctrl+E Ctrl+D"
+function = "delete_line"
+editors = ["all"]
+
+[[shortcuts.code_editing]]
+key = "Ctrl+E Ctrl+L"
+function = "duplicate_line_down"
+editors = ["all"]
+
+[[shortcuts.code_editing]]
+key = "Ctrl+E Ctrl+["
+function = "fold_region"
+editors = ["all"]
+
+[[shortcuts.code_editing]]
+key = "Ctrl+E Ctrl+]"
+function = "unfold_region"
+editors = ["all"]
+
+[[shortcuts.code_editing]]
+key = "Ctrl+E Ctrl+0"
+function = "fold_all"
+editors = ["all"]
+
+[[shortcuts.code_editing]]
+key = "Ctrl+E Ctrl+9"
+function = "unfold_all"
+editors = ["all"]
+
+[[shortcuts.code_editing]]
+key = "Ctrl+E Ctrl+R"
+function = "replace_in_file"
+note = "Ctrl+H unavailable (direction key)"
+editors = ["all"]
+
+[[shortcuts.code_editing]]
+key = "Ctrl+E Ctrl+Shift+R"
+function = "replace_in_project"
+editors = ["all"]
+
+[[shortcuts.code_editing]]
+key = "Ctrl+E Ctrl+."
+function = "quick_fix"
+note = "Show Intention Actions in JetBrains"
+editors = ["all"]
+
+# --- Window/View (Ctrl+W) ---
+
+[[shortcuts.window_view]]
+key = "Ctrl+W Ctrl+W"
+function = "close_tab"
+note = "double-press self-reference"
+editors = ["all"]
+
+[[shortcuts.window_view]]
+key = "Ctrl+W Ctrl+N"
+function = "new_file"
+note = "also available as standalone Ctrl+N"
+editors = ["all"]
+
+[[shortcuts.window_view]]
+key = "Ctrl+W Ctrl+T"
+function = "toggle_terminal"
+editors = ["all"]
+
+[[shortcuts.window_view]]
+key = "Ctrl+W Ctrl+B"
+function = "toggle_sidebar"
+editors = ["all"]
+
+[[shortcuts.window_view]]
+key = "Ctrl+W Ctrl+S"
+function = "split_editor"
+editors = ["all"]
+
+[[shortcuts.window_view]]
+key = "Ctrl+W 1"
+function = "focus_group_1"
+editors = ["VS Code", "JetBrains"]
+
+[[shortcuts.window_view]]
+key = "Ctrl+W 2"
+function = "focus_group_2"
+editors = ["VS Code", "JetBrains"]
+
+[[shortcuts.window_view]]
+key = "Ctrl+W 3"
+function = "focus_group_3"
+editors = ["VS Code", "JetBrains"]
+
+[[shortcuts.window_view]]
+key = "Ctrl+W Ctrl+D"
+function = "toggle_debug_panel"
+editors = ["VS Code", "JetBrains"]
+
+[[shortcuts.window_view]]
+key = "Ctrl+W Ctrl+X"
+function = "toggle_extensions_panel"
+editors = ["VS Code"]
+
+[[shortcuts.window_view]]
+key = "Ctrl+W Ctrl+Z"
+function = "toggle_zen_mode"
+editors = ["VS Code", "Zed"]
+
+# --- Run/Debug (Ctrl+R) ---
+
+[[shortcuts.run_debug]]
+key = "Ctrl+R Ctrl+R"
+function = "run_without_debug"
+note = "double-press self-reference; terminal Ctrl+R unchanged"
+editors = ["all"]
+
+[[shortcuts.run_debug]]
+key = "Ctrl+R Ctrl+D"
+function = "start_debugging"
+editors = ["VS Code", "JetBrains"]
+
+[[shortcuts.run_debug]]
+key = "Ctrl+R Ctrl+S"
+function = "stop"
+editors = ["all"]
+
+[[shortcuts.run_debug]]
+key = "Ctrl+R Ctrl+C"
+function = "continue_execution"
+editors = ["all"]
+
+[[shortcuts.run_debug]]
+key = "Ctrl+R Ctrl+O"
+function = "step_over"
+editors = ["all"]
+
+[[shortcuts.run_debug]]
+key = "Ctrl+R Ctrl+I"
+function = "step_into"
+editors = ["all"]
+
+[[shortcuts.run_debug]]
+key = "Ctrl+R Ctrl+B"
+function = "toggle_breakpoint"
+editors = ["all"]
+
+# --- Navigation (Ctrl+G) ---
+
+[[shortcuts.navigation]]
+key = "Ctrl+G Ctrl+G"
+function = "go_to_line"
+note = "double-press self-reference"
+editors = ["all"]
+
+[[shortcuts.navigation]]
+key = "Ctrl+G Ctrl+F"
+function = "go_to_file"
+note = "VS Code/Zed/Sublime: Quick Open. JetBrains: Search Everywhere (Files tab)"
+editors = ["all"]
+
+[[shortcuts.navigation]]
+key = "Ctrl+G Ctrl+R"
+function = "go_to_symbol"
+note = "replaces VS Code Ctrl+T (show all symbols)"
+editors = ["all"]
+
+[[shortcuts.navigation]]
+key = "Ctrl+G Ctrl+D"
+function = "go_to_definition"
+editors = ["all"]
+
+[[shortcuts.navigation]]
+key = "Ctrl+G Ctrl+Shift+R"
+function = "find_references"
+editors = ["all"]
+
+[[shortcuts.navigation]]
+key = "Ctrl+G Ctrl+B"
+function = "navigate_back"
+editors = ["all"]
+
+[[shortcuts.navigation]]
+key = "Ctrl+G Ctrl+N"
+function = "navigate_forward"
+editors = ["all"]
+
+[[shortcuts.navigation]]
+key = "Ctrl+G Ctrl+P"
+function = "command_palette"
+note = "VS Code: Ctrl+Shift+P. JetBrains: Ctrl+Shift+A (Find Action)"
+editors = ["all"]
+
+# --- Refactoring (Ctrl+T) ---
+
+[[shortcuts.refactoring]]
+key = "Ctrl+T Ctrl+R"
+function = "rename_symbol"
+editors = ["all"]
+
+[[shortcuts.refactoring]]
+key = "Ctrl+T Ctrl+M"
+function = "extract_method"
+editors = ["JetBrains", "VS Code"]
+
+[[shortcuts.refactoring]]
+key = "Ctrl+T Ctrl+V"
+function = "extract_variable"
+editors = ["JetBrains", "VS Code"]
+
+[[shortcuts.refactoring]]
+key = "Ctrl+T Ctrl+I"
+function = "inline"
+editors = ["JetBrains"]
+
+[[shortcuts.refactoring]]
+key = "Ctrl+T Ctrl+T"
+function = "refactor_this"
+note = "JetBrains Refactor This popup menu"
+editors = ["JetBrains"]
+
+# ── Conflict Log ──────────────────────────────────────────────
+
+[[conflicts]]
+key = "Ctrl+E"
+original = "Emacs end-of-line, JetBrains Recent Files"
+resolution = "end-of-line → Alt+E; Recent Files → use Ctrl+G Ctrl+F or Search Everywhere"
+
+[[conflicts]]
+key = "Ctrl+W"
+original = "close tab/window (universal), JetBrains extend selection"
+resolution = "close tab → Ctrl+W Ctrl+W (chord self-reference, low frequency)"
+
+[[conflicts]]
+key = "Ctrl+R"
+original = "terminal reverse-search (critical)"
+resolution = "NOT intercepted by AutoHotKey; terminal unchanged; IDE prefix only"
+
+[[conflicts]]
+key = "Ctrl+G"
+original = "go to line (all editors)"
+resolution = "→ Ctrl+G Ctrl+G (chord self-reference)"
+
+[[conflicts]]
+key = "Ctrl+T"
+original = "VS Code show all symbols, JetBrains VCS Update"
+resolution = "VS Code symbols → Ctrl+G Ctrl+R; JB Git → abandoned (terminal CLI)"
+
+[[conflicts]]
+key = "Ctrl+H"
+original = "replace in file (legacy), browser history, terminal backspace"
+resolution = "AutoHotKey intercepts as LEFT arrow; replace → Ctrl+E Ctrl+R"
+
+[[conflicts]]
+key = "Ctrl+K"
+original = "VS Code chords prefix, JetBrains Git commit, terminal kill-line"
+resolution = "sacrificed for UP arrow (AutoHotKey)"
+
+# ── Design Constraints ────────────────────────────────────────
+
+constraints = [
+    "No F1-F12 keys (HHKB layout)",
+    "No Home/End/PgUp/PgDn (HHKB layout)",
+    "No Ctrl+H/J/K/L as chords prefix or chords second stroke (AHK intercept)",
+    "Ctrl+K not used as chords prefix",
+    "All Git operations through terminal CLI — no GUI Git shortcuts",
+    "Chords second stroke: prefer Ctrl+key format",
+    "Double-press self-reference for preserved prefix functions",
+    "Modifier layers: Ctrl=primary, Ctrl+Shift=wider scope, Ctrl+Alt=advanced/structural",
+]
