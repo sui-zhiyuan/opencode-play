@@ -76,7 +76,7 @@ key = "Ctrl+Shift+F"
 function = "find_in_project"
 
 [[key_partition.hhkb_nav]]
-key = "Ctrl+A"
+key = "Alt+A"
 function = "line_start"
 
 [[key_partition.hhkb_nav]]
@@ -149,10 +149,6 @@ key = "Ctrl+Shift+F"
 function = "find_in_project"
 
 [[shortcuts.universal]]
-key = "Ctrl+N"
-function = "new_file"
-
-[[shortcuts.universal]]
 key = "Ctrl+P"
 function = "quick_open"
 note = "also available as Ctrl+G Ctrl+F"
@@ -160,29 +156,14 @@ note = "also available as Ctrl+G Ctrl+F"
 # --- Code Editing (Ctrl+E) ---
 
 [[shortcuts.code_editing]]
-key = "Ctrl+E Ctrl+F"
-function = "format_document"
+key = "Ctrl+E Ctrl+D" 
+function = "foDmat_document"
 editors = ["all"]
 
 [[shortcuts.code_editing]]
-key = "Ctrl+E Ctrl+/"
+key = "Ctrl+E Ctrl+R"
 function = "toggle_line_comment"
 note = "also available as standalone Ctrl+/"
-editors = ["all"]
-
-[[shortcuts.code_editing]]
-key = "Ctrl+E Ctrl+Shift+/"
-function = "toggle_block_comment"
-editors = ["all"]
-
-[[shortcuts.code_editing]]
-key = "Ctrl+E Ctrl+D"
-function = "delete_line"
-editors = ["all"]
-
-[[shortcuts.code_editing]]
-key = "Ctrl+E Ctrl+L"
-function = "duplicate_line_down"
 editors = ["all"]
 
 [[shortcuts.code_editing]]
@@ -196,28 +177,28 @@ function = "unfold_region"
 editors = ["all"]
 
 [[shortcuts.code_editing]]
-key = "Ctrl+E Ctrl+0"
+key = "Ctrl+E Ctrl+Shift+["
 function = "fold_all"
 editors = ["all"]
 
 [[shortcuts.code_editing]]
-key = "Ctrl+E Ctrl+9"
+key = "Ctrl+E Ctrl+Shift+]"
 function = "unfold_all"
 editors = ["all"]
 
 [[shortcuts.code_editing]]
-key = "Ctrl+E Ctrl+R"
+key = "Ctrl+E Ctrl+F"
 function = "replace_in_file"
 note = "Ctrl+H unavailable (direction key)"
 editors = ["all"]
 
 [[shortcuts.code_editing]]
-key = "Ctrl+E Ctrl+Shift+R"
+key = "Ctrl+E Ctrl+Shift+F"
 function = "replace_in_project"
 editors = ["all"]
 
 [[shortcuts.code_editing]]
-key = "Ctrl+E Ctrl+."
+key = "Ctrl+."
 function = "quick_fix"
 note = "Show Intention Actions in JetBrains"
 editors = ["all"]
@@ -295,26 +276,6 @@ function = "start_debugging"
 editors = ["VS Code", "JetBrains"]
 
 [[shortcuts.run_debug]]
-key = "Ctrl+R Ctrl+S"
-function = "stop"
-editors = ["all"]
-
-[[shortcuts.run_debug]]
-key = "Ctrl+R Ctrl+C"
-function = "continue_execution"
-editors = ["all"]
-
-[[shortcuts.run_debug]]
-key = "Ctrl+R Ctrl+O"
-function = "step_over"
-editors = ["all"]
-
-[[shortcuts.run_debug]]
-key = "Ctrl+R Ctrl+I"
-function = "step_into"
-editors = ["all"]
-
-[[shortcuts.run_debug]]
 key = "Ctrl+R Ctrl+B"
 function = "toggle_breakpoint"
 editors = ["all"]
@@ -350,17 +311,17 @@ function = "find_references"
 editors = ["all"]
 
 [[shortcuts.navigation]]
-key = "Ctrl+G Ctrl+B"
+key = "Ctrl+G Ctrl+["
 function = "navigate_back"
 editors = ["all"]
 
 [[shortcuts.navigation]]
-key = "Ctrl+G Ctrl+N"
+key = "Ctrl+G Ctrl+]"
 function = "navigate_forward"
 editors = ["all"]
 
 [[shortcuts.navigation]]
-key = "Ctrl+G Ctrl+P"
+key = "Ctrl+G Ctrl+E"
 function = "command_palette"
 note = "VS Code: Ctrl+Shift+P. JetBrains: Ctrl+Shift+A (Find Action)"
 editors = ["all"]
@@ -382,7 +343,7 @@ key = "Ctrl+T Ctrl+V"
 function = "extract_variable"
 editors = ["JetBrains", "VS Code"]
 
-[[shortcuts.refactoring]]
+[[shortcuts.refactPoring]]
 key = "Ctrl+T Ctrl+I"
 function = "inline"
 editors = ["JetBrains"]
