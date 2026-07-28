@@ -1,0 +1,19 @@
+version = 1
+revision = 3
+requires-python = ">=3.10"
+
+[manifest]
+members = [
+    "daft-demo",
+    "opencode-play",
+]
+
+[[package]]
+name = "daft-demo"
+version = "0.1.0"
+source = { editable = "daft_demo" }
+
+[[package]]
+name = "opencode-play"
+version = "0.1.0"
+source = { virtual = "." }
