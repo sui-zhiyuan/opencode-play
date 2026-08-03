@@ -201,18 +201,18 @@ UDF 输入输出在 Python ↔ Rust 间使用 Arrow C Data Interface 传递，�
 
 | 平台 | 默认算法 | 说明 |
 |------|---------|------|
-| aarch64 + CRC32C 可用 | CRC32C | 硬件加速，需验证分布均匀性 |
-| aarch64 + CRC32C 不可用 | xxHash3_64（NEON） | Daft 已支持 NEON 加速路径 |
-| x86_64 | xxHash3_64（AVX2） | 现有路径 |
+| aarch64 + CRC32C 可用 | CRC32C | 硬件加速（全新添加，当前 Daft 无 ARM hash gate） |
+| aarch64 + CRC32C 不可用 | xxHash3_64 | 当前软件路径，可能受益于依赖库内部 SIMD |
+| x86_64 | xxHash3_64 | 现有路径 |
 | 安全敏感场景 | SHA1 / MurmurHash3 | HashDoS 防护 |
 
 ### 3.3.2 CRC32C 准入条件
 
-CRC32C 作为默认 hash 仅在同时满足以下条件时启用：
+CRC32C 作为**新增** hash 算法，仅在同时满足以下条件时启用（当前 Daft hash kernel 不支持 CRC32C 和 aarch64 专用路径）：
 
 1. `is_aarch64_feature_detected!("crc")` 返回 true
 2. 环境变量 `DAFT_ARM_ENABLE_CRC32C_ROW_HASH=1` 显式启用
-3. 数据类型为 integer（i8–u64）、float（f32/f64 reinterpret）、utf8、binary、boolean 之一
+3. 数据类型为 integer（i8–u64）、float、utf8、binary、boolean 之一
 
 不满足时静默回退 xxHash3_64。
 
@@ -220,7 +220,7 @@ CRC32C 作为默认 hash 仅在同时满足以下条件时启用：
 
 ### 3.4.1 UTF-8 字节长度计算
 
-`length_bytes` 函数保证 O(rows) 时间复杂度，通过 Arrow offset buffer 差计算，不访问字符串内容。Daft 仅使用 `Utf8Array`（Arrow i32 offset），无 `LargeUtf8Array` 变体。
+`length_bytes` 函数当前实现为逐元素 iterator + `v.len()`，未使用 Arrow offset buffer 差分。优化方向：新增直接读取 offsets 并计算 `offset[i+1] - offset[i]` 的实现，正确处理 null bitmap。Daft 逻辑类型为 `DataType::Utf8` / `Utf8Array`，其 Arrow 物理映射为 `LargeUtf8`（i64 offset），需按 i64 offset 设计。
 
 ### 3.4.2 UTF-8 字符长度计算
 
