@@ -3,9 +3,12 @@
 - [ARM / Kunpeng CPU 架构](arm-kunpeng/README.md)
   - [ARM SME 可扩展矩阵扩展](arm-kunpeng/arm-sme.md)
   - [矩阵 Tiling / Tailing / Tuning](arm-kunpeng/matrix-tiling-tune.md)
+  - [Kunpeng 920B 硬件规格](arm-kunpeng/kunpeng-920b-specs.md)
 
 - [Rust + ARM / Kunpeng 亲和](rust-kunpeng/README.md)
   - [鲲鹏 Rust 生态建设](rust-kunpeng/rust-kunpeng.md)
+  - [Daft Kunpeng 性能优化设计](rust-kunpeng/daft-kunpeng-perf-design-spec.md)
+  - [Pipeline UDF 算子清单](rust-kunpeng/daft-kunpeng-udf-inventory.md)
 
 - [Triton-CPU + ARM 亲和](triton-cpu/README.md)
   - [Triton CPU 算子列表](triton-cpu/triton-cpu-ops.md)
