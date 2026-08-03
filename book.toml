@@ -1,0 +1,14 @@
+[book]
+title = "技术笔记"
+authors = ["suine"]
+language = "zh-CN"
+src = "docs"
+
+[build]
+build-dir = "target/book"
+
+[output.html]
+no-section-label = true
+
+[output.html.search]
+limit-results = 20
