@@ -29,6 +29,7 @@
 
 ## 1.4 约束
 
+- 基于 **Daft v0.7.2**，UDF API 为 `@daft.udf`（v1，支持 `concurrency`/`batch_size`）。`@daft.func`（v2 API）在该版本尚未引入，不考虑其参数差异
 - 性能优化目标平台：Kunpeng 950；Kunpeng 920/920B 仅需保证代码可正确执行（不触发 core dump）
 - 优化通过 `cfg(target_arch = "aarch64")` 条件编译 + 运行时 CPU feature 检测（`is_aarch64_feature_detected!`）门控，不支持时回退通用路径
 - 所有修改应具备上游合入 Daft mainline 的可行性
@@ -145,7 +146,7 @@ MicroPartition (执行期数据单元)
 | SVE2 | `cfg(target_arch = "aarch64")` | `is_aarch64_feature_detected!("sve2")` | NEON (128-bit) |
 | NEON | `cfg(target_arch = "aarch64")` | N/A（AArch64 强制支持） | 标量循环 |
 
-SVE 指令使用 `core::arch::asm!` 内联汇编实现，不依赖 `std::simd` 或 `stdarch` SVE intrinsics（避免 nightly 依赖）。
+SVE/SVE2/NEON 指令封装在专门的 `simd` 模块中，不依赖 nightly Rust。模块内部优先使用 stable intrinsics（`std::arch::aarch64`），必要时使用 `core::arch::asm!` 内联汇编；尽量减少 `unsafe` 使用范围，必须 `unsafe` 时以最小粒度封装为 safe 接口。
 
 ### 3.1.2 平台兼容矩阵
 
@@ -163,13 +164,15 @@ SVE 指令使用 `core::arch::asm!` 内联汇编实现，不依赖 `std::simd` �
 连续多个 mapper UDF 调用可融合为单次 `df.with_column()` 调用，当且仅当满足：
 
 - 中间无 Filter、Join、GroupBy、Deduplicator 等非 Project 算子
-- 所有 mappers 为纯字符串变换（`str → str`），无外部 I/O 依赖
+- 所有 mappers 为 `@daft.udf` 实现的纯函数（无外部 I/O、无子进程调用、无副作用），不含 `@daft.cls`（有状态、执行顺序无保证）
 - 输出列仅被下游 UDF 消费或作为最终输出
-- 官方 Data-Juicer 算子（`use_official_text_ops=true`）不可参与融合（作为边界）
+- 依赖外部 heavy 库（如 fastText、KenLM、sentencepiece）的算子不可参与融合——这些库的加载和生命周期管理独立于纯 Python UDF 执行上下文
+
+融合默认启用。全局参数 `fuse_mappers`（默认 `True`）可关闭所有融合；单 UDF 参数 `@daft.udf(allow_fusion=False)`（默认 `True`）可控制该 UDF 是否参与融合，设为 `False` 时在其前后形成融合边界。
 
 ### 3.2.2 UDF 并发度自适应规格
 
-UDF 并发度采用 TCP 试探回退机制自适应调优：
+UDF 并发度采用试探回退机制自适应调优：
 
 - 初始并发度 = 当前 worker 核心数
 - 递增期：每次提升并发度后测量吞吐量，若提升则继续递增（步长待定）
@@ -178,9 +181,9 @@ UDF 并发度采用 TCP 试探回退机制自适应调优：
 
 适用范围：`@daft.func` / `@daft.udf` mapper 和 filter，不含 sink、deduplicator、join 等全局 barrier 算子。
 
-### 3.2.3 Rust 重写算子清单
+### 3.2.3 Rust 重写算子清单 ⚠️ 弃用
 
-以下 12 个 Python UDF 算子确认为 Rust 重写候选（详见 `daft-kunpeng-udf-inventory.md`）：
+以下 12 个 Python UDF 算子曾确认为 Rust 重写候选（详见 `daft-kunpeng-udf-inventory.md`）：
 
 **P0 文本链（11 个，可融合为 1 个 Rust kernel）**：
 `clean_html_mapper`、`clean_links_mapper`、`clean_email_mapper`、`clean_copyright_mapper`、`fix_unicode_mapper`、`punctuation_normalization_mapper`、`whitespace_normalization_mapper`、`text_length_filter`、`alphanumeric_filter`、`language_id_score_filter`、`text_chunk_mapper`
@@ -216,17 +219,21 @@ CRC32C 作为**新增** hash 算法，仅在同时满足以下条件时启用（
 
 不满足时静默回退 xxHash3_64。
 
-## 3.4 文本处理规格
+> ⚠️ **需验证**：
+> 1. CRC32C 在 Kunpeng 上的性能是否优于 SVE2 加速的 xxHash——xxHash 已有 SVE 实现（PR #683/#752），CRC32C 未必更快
+> 2. 跨架构集群（x86 + ARM 混合）中，不同节点使用不同 hash 算法会导致 groupby/join 路由不一致，产生正确性错误。集群中所有节点的 hash 算法选择必须是集群级一致决策，不能是 per-node 运行时选择
+
+## 3.4 文本处理规格 ⚠️ 弃用
 
 ### 3.4.1 UTF-8 字节长度计算
 
-`length_bytes` 函数当前实现为逐元素 iterator + `v.len()`，未使用 Arrow offset buffer 差分。优化方向：新增直接读取 offsets 并计算 `offset[i+1] - offset[i]` 的实现，正确处理 null bitmap。Daft 逻辑类型为 `DataType::Utf8` / `Utf8Array`，其 Arrow 物理映射为 `LargeUtf8`（i64 offset），需按 i64 offset 设计。
+`length_bytes` 函数当前实现为逐元素 it/rrow offset buffer 差分。优化方向：新增直接读取 offsets 并计算 `offset[i+1] - offset[i]` 的实现，正确处理 null bitmap。Daft 逻辑类型为 `DataType::Utf8` / `Utf8Array`，其 Arrow 物理映射为 `LargeUtf8`（i64 offset），需按 i64 offset 设计。
 
 ### 3.4.2 UTF-8 字符长度计算
 
 `col.length()`（Unicode 字符数）在 SVE 可用时使用 256-bit SVE `cntp` 指令加速（`char_count = byte_count − 续接字节数`），SVE 不可用时降级为 NEON 128-bit 路径。
 
-## 3.5 视频处理规格
+## 3.5 视频处理规格 ⚠️ 弃用
 
 ### 3.5.1 UDF 粒度契约
 
@@ -236,7 +243,7 @@ CRC32C 作为**新增** hash 算法，仅在同时满足以下条件时启用（
 
 视频转码使用鲲鹏 BoostKit x265 加速库，通过 ffmpeg 命令行调用（`-c:v libx265`）。前提：目标节点已安装 BoostKit x265 并链接 ffmpeg。BoostKit 为自研产品，可随项目发布。
 
-## 3.6 Gather/Take 规格
+## 3.6 Gather/Take 规格 ⚠️ 弃用
 
 ### 3.6.1 向量化加载
 
@@ -258,7 +265,7 @@ CRC32C 作为**新增** hash 算法，仅在同时满足以下条件时启用（
 | U7 | ✅ | SVE 实现方式 | `core::arch::asm!` 内联汇编，不依赖 nightly |
 | U8 | ✅ | Daft 字符串类型 | Daft 仅使用 Utf8（i32 offset），无 LargeUtf8 |
 | U9 | ✅ | 视频 UDF 粒度 | 整段文件（`input_path: str`），非逐帧 |
-| U10 | ✅ | UDF 并发度调优 | TCP 试探回退自适应机制 |
+| U10 | ✅ | UDF 并发度调优 | 试探回退自适应机制 |
 
 # 附录 B：优先级建议
 
@@ -269,6 +276,6 @@ CRC32C 作为**新增** hash 算法，仅在同时满足以下条件时启用（
 | P1 | A: P0 文本链 Rust 重写 | 11 个算子融合为 1 个 kernel，消除 Python 边界，收益最高 |
 | P1 | A: UDF 链融合 | 减少调度/物化边界，对长 UDF 链效果显著 |
 | P2 | C: SVE 向量化（cntp/gather） | 依赖 950 硬件确认，920B 已可用 |
-| P2 | A: UDF 自适应并发 | TCP 试探回退，需 runtime 基础设施 |
+| P2 | A: UDF 自适应并发 | 试探回退，需 runtime 基础设施 |
 | P2 | A: Arrow 零拷贝传输 | 需 batch mode UDF 支持 |
 | P3 | E: BoostKit 视频加速 | 依赖外部库安装 + 目标节点配置 |
