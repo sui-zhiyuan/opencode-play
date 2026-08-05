@@ -9,6 +9,7 @@
   - [鲲鹏 Rust 生态建设](rust-kunpeng/rust-kunpeng.md)
   - [Daft Kunpeng 性能优化设计](rust-kunpeng/daft-kunpeng-perf-design-spec.md)
   - [Pipeline UDF 算子清单](rust-kunpeng/daft-kunpeng-udf-inventory.md)
+  - [Daft 项目最新动态](rust-kunpeng/daft-latest-developments.md)
 
 - [Triton-CPU + ARM 亲和](triton-cpu/README.md)
   - [Triton CPU 算子列表](triton-cpu/triton-cpu-ops.md)
