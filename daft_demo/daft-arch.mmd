@@ -1,0 +1,71 @@
+%%{init: {'theme': 'base', 'themeVariables': { 'fontSize': '14px', 'primaryColor': '#e3f2fd', 'primaryTextColor': '#1565c0', 'primaryBorderColor': '#1976d2', 'lineColor': '#546e7a', 'secondaryColor': '#fff3e0', 'tertiaryColor': '#e8f5e9' }}}%%
+graph TB
+    subgraph USER["📊 DataFrame API 层"]
+        A["df = daft.read_csv('p*.csv')"]
+        B[".where(col('val') > 10)"]
+        C[".with_column('bonus', bonus(col('val')))"]
+        D[".groupby('cat').agg(sum('bonus'))"]
+        E[".explain(show_all=True)"]
+    end
+
+    subgraph LOGICAL["🧠 Logical Plan 层 — 惰性求值，构建 DAG"]
+        L1["Unoptimized Logical Plan<br/>═══════════════════<br/>Aggregation: sum(bonus) → total<br/>  ↑<br/>Project: id, cat, val, py_udf(val)→bonus<br/>  ↑<br/>Filter: val > 10<br/>  ↑<br/>GlobScanOperator<br/>  2 partitions (p0.csv, p1.csv)"]
+
+        L2["🔧 Rule-Based Optimizer<br/>═══════════════════<br/>• PushDownFilter<br/>• PushDownProjection<br/>• ColumnPruning<br/>• PredicateRewrite<br/>• SplitUDFs"]
+
+        L3["Optimized Logical Plan<br/>═══════════════════<br/>Aggregation: sum(bonus) → total<br/>  ↑<br/>Project: bonus, cat<br/>  ↑<br/>UDF: py_udf(val) → bonus<br/>  passthrough: cat<br/>  ↑<br/>Project: val, cat<br/>  ↑<br/>Scan (Pushdowns ✅)<br/>  ├ projection: [val, cat]<br/>  ├ filter: val > 10<br/>  └ Num Scan Tasks = 2"]
+    end
+
+    subgraph PHYSICAL["⚙️ Physical Plan 层 — 逻辑计划 → 物理算子"]
+        P1["Physical Plan (Ray Runner)<br/>═════════════════════<br/>Project: cat, total<br/>  ↑<br/>Group-By Aggregate (global)<br/>  sum(total)<br/>  ↑<br/>RayShuffle: Hash<br/>  num_partitions = 2<br/>  by = col(cat)<br/>  ↑<br/>Group-By Aggregate (local)<br/>  sum(bonus → total)<br/>  ↑<br/>Project: bonus, cat<br/>  ↑<br/>UDF: py_udf(val) → bonus<br/>  ↑<br/>Project: val, cat<br/>  ↑<br/>ScanTaskSource<br/>  Num Scan Tasks = 2<br/>  Pushdowns: projection + filter ✅"]
+    end
+
+    subgraph EXEC["🚀 Execution Engine 层"]
+        direction LR
+        NATIVE["Native Runner<br/>───────<br/>单机多线程<br/>morsel-driven<br/>pipeline 执行"]
+        RAY_RUNNER["Ray Runner<br/>───────<br/>分布式执行<br/>Ray Actor 模型<br/>Flotilla 调度器<br/>RayShuffle 数据交换"]
+    end
+
+    subgraph IO["💾 I/O / Source 层"]
+        CSV["CSV<br/>GlobScan"]
+        PARQUET["Parquet"]
+        JSON["JSON"]
+        DELTA["Delta Lake"]
+        ICEBERG["Iceberg"]
+        S3["S3/GCS/Azure"]
+    end
+
+    subgraph SCHEDULE["📐 调度 & 并行"]
+        S1["Morsel-Driven Parallelism<br/>每个 Scan Task → morsel"]
+        S2["Pipeline Execution<br/>算子间流水线传递"]
+        S3["2-Stage Aggregation<br/>local pre-agg → shuffle → global agg"]
+    end
+
+    A --> B --> C --> D
+    A -.-> L1
+    L1 --> L2 --> L3
+    L3 --> P1
+    P1 --> NATIVE
+    P1 --> RAY_RUNNER
+    RAY_RUNNER --> S1
+    RAY_RUNNER --> S2
+    RAY_RUNNER --> S3
+    CSV --> L1
+    PARQUET --> L1
+    JSON --> L1
+    DELTA --> L1
+    ICEBERG --> L1
+    CSV --> S3
+    E -.-> L1
+    E -.-> L3
+    E -.-> P1
+
+    style USER fill:#e3f2fd,stroke:#1565c0,color:#0d47a1
+    style LOGICAL fill:#fff3e0,stroke:#e65100,color:#e65100
+    style PHYSICAL fill:#e8f5e9,stroke:#2e7d32,color:#1b5e20
+    style EXEC fill:#fce4ec,stroke:#c62828,color:#b71c1c
+    style IO fill:#f3e5f5,stroke:#6a1b9a,color:#4a148c
+    style SCHEDULE fill:#e0f7fa,stroke:#006064,color:#004d40
+    style L2 fill:#ffe0b2,stroke:#e65100,stroke-width:2px
+    style RAY_RUNNER fill:#ffcdd2,stroke:#b71c1c,stroke-width:2px
+    style P1 fill:#c8e6c9,stroke:#2e7d32,stroke-width:2px
