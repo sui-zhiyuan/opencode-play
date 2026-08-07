@@ -8,6 +8,7 @@
 - [Rust + ARM / Kunpeng 亲和](rust-kunpeng/README.md)
   - [鲲鹏 Rust 生态建设](rust-kunpeng/rust-kunpeng.md)
   - [Daft Kunpeng 性能优化设计](rust-kunpeng/daft-kunpeng-perf-design-spec.md)
+  - [Daft Kunpeng 总体设计需求分析](rust-kunpeng/daft-kunpeng-overall-design.md)
   - [Pipeline UDF 算子清单](rust-kunpeng/daft-kunpeng-udf-inventory.md)
   - [Daft 项目最新动态](rust-kunpeng/daft-latest-developments.md)
 
