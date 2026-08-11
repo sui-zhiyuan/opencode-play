@@ -50,8 +50,8 @@
   * `daft-kunpeng-udf-inventory.md`（UDF 清单）
   * `rust-kunpeng.md`（Rust 鲲鹏战略）
 * **场景清单**：6 条目标 pipeline 的定义见 volc_operator_sim 项目的 `tasks/*.json`。
-* **Daft 源码位于**：`/home/suine/projects/Daft/src/`。
-* **测试目标位于**：`/home/suine/projects/volc_operator_sim/`。
+* **Daft 源码位于**：`~/projects/Daft/src/`。
+* **测试目标位于**：`~/projects/volc_operator_sim/`。
 
 ---
 
@@ -518,7 +518,7 @@ IR-2 聚焦 Daft Rust 侧的调度策略和计算内核优化。调度策略方�
 
 ### Daft 架构概览（源码探索确认）
 
-Daft 源码位于 `/home/suine/projects/Daft/src/`，workspace 含 40+ crate。关键模块：
+Daft 源码位于 `~/projects/Daft/src/`，workspace 含 40+ crate。关键模块：
 
 | 模块 | 路径 | 职责 | 关联 IR |
 |------|------|------|--------|
@@ -538,7 +538,7 @@ Daft 源码位于 `/home/suine/projects/Daft/src/`，workspace 含 40+ crate。�
 
 ### 目标产线 UDF 特征（volc_operator_sim 探索确认）
 
-6 条 pipeline 的 JSON 任务定义位于 `/home/suine/projects/volc_operator_sim/tasks/*.json`：
+6 条 pipeline 的 JSON 任务定义位于 `~/projects/volc_operator_sim/tasks/*.json`：
 
 | Pipeline | 模态 | 算子总数 | CPU UDF 数 | 关键 UDF 类型 |
 |----------|------|---------|-----------|-------------|
