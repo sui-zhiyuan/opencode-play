@@ -24,5 +24,8 @@
     - [PyCharm uv run → Ray 重建环境](tools-and-tips/jetbrains/pycharm-uv-run-ray-warning.md)
     - [PyCharm Workspace 子模块 No module](tools-and-tips/jetbrains/pycharm-workspace-submodule-no-module.md)
 
+- [Ascend NPU 架构](ascend-npu/asc-devkit-arch-index.md)
+  - [CANN 83RC1 在线文档索引](ascend-npu/hiascend-cann-83rc1-index.md)
+
 - [探索性学习](learning/README.md)
   - [Transformer 架构学习路线](learning/transformer-learning-guide.md)
