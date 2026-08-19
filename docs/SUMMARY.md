@@ -20,6 +20,7 @@
 - [工具与技巧](tools-and-tips/README.md)
   - [VS Code 使用技巧](tools-and-tips/vscode-tips.md)
   - [通用键盘快捷键映射](tools-and-tips/shortcut-mapping.md)
+  - [AI Agent 向量知识库方案调研](tools-and-tips/agent-vector-kb.md)
   - [JetBrains Bug 记录](tools-and-tips/jetbrains/README.md)
     - [PyCharm uv run → Ray 重建环境](tools-and-tips/jetbrains/pycharm-uv-run-ray-warning.md)
     - [PyCharm Workspace 子模块 No module](tools-and-tips/jetbrains/pycharm-workspace-submodule-no-module.md)
