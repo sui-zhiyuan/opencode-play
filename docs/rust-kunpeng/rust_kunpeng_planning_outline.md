@@ -1,3 +1,16 @@
+<!--
+### 本文件编辑约定（本 session，勿删）
+
+1. 工作流：AI 每轮修改写入工作区；用户 review 后 `git add` AI 的内容入 index；
+   用户自己的批注保留在工作区（未暂存）。每轮修改前，AI 必须先通过
+   `git status` / `git diff` / `git diff --cached` 读取用户批注，按其意见调整后再动手。
+2. 语言风格：参照 Daft 章节「背景 / 应用情况 / 商业价值」——仅列举关键点与关键数据，
+   省略为连贯性补全的非重点信息；行文简洁，多要点、少铺垫。
+3. 不重复：相同信息不得在不同章节重复出现；已被其他章节覆盖的内容在此处省略或仅引用。
+4. 除特殊要求外，每个对话 round 仅能能修改单个 3 级章节，例如（Daft & Lance）/ （背景 / 应用情况 / 商业价值）
+   可以参考其他章节，但不得修改其他章节。
+-->
+
 # Rust 生态 Kunpeng 亲和远期规划 - 大纲
 
 ## Daft & Lance
@@ -79,8 +92,9 @@
 ### 背景 / 应用情况 / 商业价值
 
 - PyO3：Rust↔Pythojinn FFI 主流方案（crates.io ~2.37 亿下载、2,116 reverse dependents）；Polars / LanceDB / Daft 等用其发布 Python API，替代传统 C/C++ 扩展层。
-- rust-std/core/alloc：Rust 全生态热路径底座；鲲鹏缺口在 LSE 原子、memcpy/memcmp、LLVM tsv110 识别/调度模型。
+- rust-std/core/alloc：Rust 全生态热路径底座。
 - 商业价值：上游杠杆点，一次修复覆盖 Polars / DataFusion / Arrow / Daft 等 Python+Rust 数据栈。
+- 团队价值（PyO3）：技能点难度合适，涉及内存布局，memcpy（DMA），FFI 等技术点（技术点应用广泛）。方便验证，快速给出结论。
 
 ### 应用架构 / Rust 位置
 
@@ -91,12 +105,12 @@
 ### Kunpeng 亲和优化点
 
 - memcpy：bytes/string/buffer 转换优先 zero-copy（Arrow / buffer protocol），拷贝路径验证 libc AArch64 memcpy。
-- TODO
+- rust-std: TODO
 
 ### 技术难点
 
-- PyO3 热点在 FFI/GIL/memcpy/atomic，非 SIMD-heavy；intrinsics 直接收益有限。
-- openEuler LLVM tsv110 优化未上游（ldp/stp-noq、预取、ICP 仅 openEuler 分支），rustc 默认 upstream LLVM 拿不到。
+- rust std 性能优化合入需要 社区 commitor 等同意，性能相关优化破坏可读性。
+- PyO3 和 Rust std 均为单线程场景，950 难以发挥众核优势，主频劣势暴漏明显。 
 
 ## AgentEnv & CubeSandbox
 
@@ -105,26 +119,45 @@
 ### 背景 / 应用情况 / 商业价值
 
 - CubeSandbox：腾讯云 AI Agent 安全沙箱（Apache-2.0），rust-vmm + KVM MicroVM，E2B 兼容；冷启动 <60ms、单实例内存 <5MB、Rust 占比 ~48%、~11.5k stars。
-- AgentENV（AENV）：清华 MADSys + 月之暗面 2026-07 开源（MIT），Firecracker MicroVM Agentic RL 平台（Kimi K3）；boot/resume <50ms、pause <100ms、成本降 88.6-96.8%。
-- 商业价值：Agentic RL / 代码解释器 / 工具调用需强隔离高密度沙箱；竞争点在启动/恢复时延、单实例内存、快照/fork 成本。
+- AgentENV（AENV）：清华 MADSys + 月之暗面（aka Kimi） 2026-07 开源（MIT），Firecracker MicroVM Agentic RL 平台；宣称 boot/resume <50ms、pause <100ms（阿里云 ecs.g9i 推测为 Xeon 6xxx）、成本降 88.6-96.8%。
+- 商业价值：Harness 环境 / 代码解释器 / 工具调用需强隔离高密度沙箱；竞争点在启动/恢复时延、单实例内存、快照/fork 成本。
 
 ### 应用架构 / Rust 位置
 
+- AgentENV
+  - AgentAPI：调用入口，各种杂事（鉴权/数据管理/映射 vm 等）
+  - Orchestrator: 核心生命周期管理
+  - overlaybd：存储（块设备）host 端，rust 编写，负责模拟存储设备（ublk）。
+  - Firecracker： AWS 开源，介于 container 和 vm 之间的一个实现，依赖虚拟化拓展 KVM 和 rust-vvm。
+  - envd: guest 侧 daemon。（golang）
+- CubeSandbox：
+  - CubeAPI（axum）: 调用入口，
+- Common
+  - Firecracker ： 
+
+<!-- todo remote below-->
 - CubeSandbox：CubeAPI（axum）/ Hypervisor（Cloud Hypervisor fork + rust-vmm）/ CubeShim（containerd-shim）/ cube-agent（tokio-vsock）。
 - AgentENV：Rust server / orchestrator / FirecrackerBackend / warm-pool / snapshot / overlaybd+ublk；多节点 gateway/scheduler 为 Go。
 - 共性：MicroVM 控制面 Rust 化（KVM / Firecracker / rust-vmm），热点在启动、快照、fork、镜像层、内存回收。
 
 ### Kunpeng 亲和优化点
 
-- 启动链路：鲲鹏实测 cold start 与 snapshot boot/resume/pause 分段耗时（KVM vCPU 创建、guest kernel、vsock/envd）。
-- 密度/I/O：MicroVM RSS、page-cache 共享、overcommit、overlaybd+ublk 本地缓存命中率（AENV 1.5M images 生产规模）。
-- ARM64 适配：CubeSandbox v0.5 ARM64 全栈；验证 Firecracker/rust-vmm 在 Kunpeng + EulerOS 的 KVM/virtio/vsock/eBPF 路径。
+- 亲和指标-启动时间：当本地已有解析 OCI 缓存时的启动时间（影响请求响应时间），OCI预估复用极高，冷启动不关键
+- 亲和指标-活跃vm数量：单个 Firecracker 内存占用，线程调度机制是否能满足大量线程调度。
+- 亲和指标-pause/resume 时间：影响实际并发度，大部分 harness 需要执行命令占比少，大多数情况为 harness 等待 LLM 生成，容器空闲。
+- 亲和指标-镜像解析速度：待分析，需要输入
+
+- resume 过程中镜像拉去到内存中，需要适配 ARM DMA 指令。
+- start 过程，MVM 中 kernel 初始化（非 Rust 相关）
+- image 模块 下载/解压/映射 ，非重点路径，性能不关键（待确认，跨节点？）。
+- 跨 MVM cow 内存共享，MVM 中热点指令强制缓存（仅 950 支持）
+- TODO more
 
 ### 技术难点
 
-- Firecracker 已支持 aarch64；鲲鹏 + EulerOS 组合缺实测基线（KVM capability、guest kernel 配置）。
-- 镜像层依赖：ublk 需 Linux 6.0+；overlaybd 当前依赖 TCMU（target_core_user），EulerOS 是否启用需实测。
-- 兼容性：guest kernel 最小配置、virtio-mmio/FDT、页大小（4K/64K）与 Firecracker/CubeSandbox 适配。
+- 需要操作系统内核/进程熟悉专家支持
+- 需要熟悉 ARM 硬件虚拟化流程
+- 
 
 ## Sched-ext
 
