@@ -143,15 +143,21 @@
 
 ### Kunpeng 亲和优化点
 
-- 亲和指标-启动时间：当本地已有解析 OCI 缓存时的启动时间（影响请求响应时间），OCI预估复用极高，冷启动不关键
-- 亲和指标-活跃vm数量：单个 Firecracker 内存占用，线程调度机制是否能满足大量线程调度。
-- 亲和指标-pause/resume 时间：影响实际并发度，大部分 harness 需要执行命令占比少，大多数情况为 harness 等待 LLM 生成，容器空闲。
-- 亲和指标-镜像解析速度：待分析，需要输入
+**评估指标**（背景节竞争点的鲲鹏化；上游数据为 Xeon g9i，需先在 920/920B 复测）
 
-- resume 内存恢复：disk→mem 硬件 DMA + mem→mem 进 guest RAM（NEON/SVE 宽加载）。
-- start 过程，MVM 中 kernel 初始化（非 Rust 相关）
-- image 模块 下载/解压/映射 ，非重点路径，性能不关键（待确认，跨节点？）。
-- 跨 MVM cow 内存共享，MVM 中热点指令强制缓存（仅 950 支持）
+- 启动时间：本地已有解析 OCI 缓存时的启动（OCI 复用高，冷启动降权）
+- 活跃 microVM 数量：单实例内存占用 + 线程调度/NUMA 放置（每 VM = VMM+vCPU+API 三线程，高密度数千线程；见 Sched-ext 章）
+- pause/resume 时间：主指标（harness 大多等待 LLM 生成，沙箱空闲占比高）
+- 镜像解析速度：待分析，需要输入
+
+**优化方向**
+
+- 页大小 4K/64K：CoW 粒度 vs 缺页次数 trade-off，贯穿恢复速度与内存密度（鲲鹏常用 64K，需实测拐点）
+- CubeSandbox：CubeCoW XFS reflink（FICLONE）在鲲鹏 NVMe/64K 页下开销验证
+- resume 内存恢复：CoW/缺页驱动（非整块 memcpy），优化对象是缺页路径 + 页大小选型
+- overlaybd + ublk 数据路径：lazy-load 解压（lz4/zstd）+ CRC32C 校验在运行时 IO 热路径（920B+?）
+- image 模块 下载/解压/映射，非重点路径，性能不关键（待确认，跨节点？）
+- 跨 microVM cow 内存共享，热点指令强制保留在L3缓存（仅 950 支持）
 - TODO more
 
 ### 技术难点
