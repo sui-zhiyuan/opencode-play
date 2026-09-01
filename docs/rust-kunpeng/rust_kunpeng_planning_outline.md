@@ -154,17 +154,16 @@
 
 - 页大小 4K/64K：CoW 粒度 vs 缺页次数 trade-off，贯穿恢复速度与内存密度（鲲鹏常用 64K，需实测拐点）
 - CubeSandbox：CubeCoW XFS reflink（FICLONE）在鲲鹏 NVMe/64K 页下开销验证
-- resume 内存恢复：CoW/缺页驱动（非整块 memcpy），优化对象是缺页路径 + 页大小选型
 - overlaybd + ublk 数据路径：lazy-load 解压（lz4/zstd）+ CRC32C 校验在运行时 IO 热路径（920B+?）
 - image 模块 下载/解压/映射，非重点路径，性能不关键（待确认，跨节点？）
 - 跨 microVM cow 内存共享，热点指令强制保留在L3缓存（仅 950 支持）
 - TODO more
 
-### 技术难点
+### 技术难点 / 团队能力 / 项目推进
 
 - 需要操作系统内核/进程熟悉专家支持
 - 需要熟悉 ARM 硬件虚拟化流程
-- 
+- microVM 不可跨架构迁移，因此无法 Kunpeng 50% + x86 50% 组件集群
 
 ## Sched-ext
 
