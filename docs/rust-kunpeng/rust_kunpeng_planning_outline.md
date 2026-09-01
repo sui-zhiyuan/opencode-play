@@ -124,21 +124,18 @@
 
 ### 应用架构 / Rust 位置
 
-- AgentENV
-  - AgentAPI：调用入口，各种杂事（鉴权/数据管理/映射 vm 等）
-  - Orchestrator: 核心生命周期管理
-  - overlaybd：存储（块设备）host 端，rust 编写，负责模拟存储设备（ublk）。
-  - Firecracker： AWS 开源，介于 container 和 vm 之间的一个实现，依赖虚拟化拓展 KVM 和 rust-vvm。
-  - envd: guest 侧 daemon。（golang）
-- CubeSandbox：
-  - CubeAPI（axum）: 调用入口，
-- Common
-  - Firecracker ： 
-
-<!-- todo remote below-->
-- CubeSandbox：CubeAPI（axum）/ Hypervisor（Cloud Hypervisor fork + rust-vmm）/ CubeShim（containerd-shim）/ cube-agent（tokio-vsock）。
-- AgentENV：Rust server / orchestrator / FirecrackerBackend / warm-pool / snapshot / overlaybd+ublk；多节点 gateway/scheduler 为 Go。
-- 共性：MicroVM 控制面 Rust 化（KVM / Firecracker / rust-vmm），热点在启动、快照、fork、镜像层、内存回收。
+- AgentENV（主体 Rust；多节点控制面 Go）
+  - API（Axum）：调用入口，鉴权 / E2B 兼容协议
+  - Orchestrator：生命周期状态机（create/pause/resume/snapshot/fork/delete + auto-pause/resume）
+  - sandbox（FirecrackerBackend）：Firecracker VM 管理（spawn / 网络 / 块设备挂载）
+  - warm-pool：Firecracker 进程预热池（跳过 spawn + socket 轮询）
+  - overlaybd + ublk（+ ublk-daemon）：分层镜像 + 用户态块设备（io_uring）
+  - envd：guest 内 daemon（E2B 开源，Go）的 Rust 客户端
+- CubeSandbox（Rust 控制面 + Go 编排层）
+  - CubeAPI（axum）：调用入口，E2B 兼容 REST
+  - CubeHypervisor / CubeShim：KVM microVM（Cloud Hypervisor fork）
+  - cube-agent：guest 侧 agent（tokio-vsock）
+  - CubeCoW：快照引擎（XFS FICLONE reflink，供 Go Cubelet CGO 调用）
 
 ### Kunpeng 亲和优化点
 
