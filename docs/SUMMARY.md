@@ -12,6 +12,8 @@
   - [Daft Kunpeng 总体设计需求分析](rust-kunpeng/daft-kunpeng-overall-design.md)
   - [Pipeline UDF 算子清单](rust-kunpeng/daft-kunpeng-udf-inventory.md)
   - [Daft 项目最新动态](rust-kunpeng/daft-latest-developments.md)
+  - [sched_ext 调度器全景分析](rust-kunpeng/scx-schedulers.md)
+  - [Rust 生态 Kunpeng 亲和远期规划](rust-kunpeng/rust_kunpeng_planning_outline.md)
 
 - [Triton-CPU + ARM 亲和](triton-cpu/README.md)
   - [Triton CPU 算子列表](triton-cpu/triton-cpu-ops.md)
