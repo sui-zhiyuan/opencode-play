@@ -124,18 +124,22 @@
 
 ### 应用架构 / Rust 位置
 
-- AgentENV（主体 Rust；多节点控制面 Go）
+- AgentENV（主体 Rust；本节聚焦单节点数据面）
   - API（Axum）：调用入口，鉴权 / E2B 兼容协议
   - Orchestrator：生命周期状态机（create/pause/resume/snapshot/fork/delete + auto-pause/resume）
-  - sandbox（FirecrackerBackend）：Firecracker VM 管理（spawn / 网络 / 块设备挂载）
+  - sandbox（FirecrackerBackend）：Firecracker VM 管理（spawn / 网络 / 块设备挂载）；每 VM = VMM 线程 + vCPU 线程 + API 线程
   - warm-pool：Firecracker 进程预热池（跳过 spawn + socket 轮询）
+  - snapshot / template：快照 / fork / 模板（内存恢复 + 基页内存 CoW，单机核心）
   - overlaybd + ublk（+ ublk-daemon）：分层镜像 + 用户态块设备（io_uring）
   - envd：guest 内 daemon（E2B 开源，Go）的 Rust 客户端
-- CubeSandbox（Rust 控制面 + Go 编排层）
+- CubeSandbox（Rust 控制面；忽略 Go 开发集权交互面）
   - CubeAPI（axum）：调用入口，E2B 兼容 REST
-  - CubeHypervisor / CubeShim：KVM microVM（Cloud Hypervisor fork）
+  - CubeHypervisor / CubeShim：KVM microVM（Cloud Hypervisor fork，自带 snapshot/restore）
   - cube-agent：guest 侧 agent（tokio-vsock）
-  - CubeCoW：快照引擎（XFS FICLONE reflink，供 Go Cubelet CGO 调用）
+  - CubeCoW：快照引擎（XFS FICLONE reflink，磁盘 CoW；供节点侧 Go 组件 CGO 调用）
+- Common
+  - 都基于 rust-vmm + KVM
+  - CoW 路径差异：内存 CoW / template fork（AgentENV）vs 磁盘 CoW / XFS reflink（CubeSandbox）
 
 ### Kunpeng 亲和优化点
 
@@ -144,7 +148,7 @@
 - 亲和指标-pause/resume 时间：影响实际并发度，大部分 harness 需要执行命令占比少，大多数情况为 harness 等待 LLM 生成，容器空闲。
 - 亲和指标-镜像解析速度：待分析，需要输入
 
-- resume 过程中镜像拉去到内存中，需要适配 ARM DMA 指令。
+- resume 内存恢复：disk→mem 硬件 DMA + mem→mem 进 guest RAM（NEON/SVE 宽加载）。
 - start 过程，MVM 中 kernel 初始化（非 Rust 相关）
 - image 模块 下载/解压/映射 ，非重点路径，性能不关键（待确认，跨节点？）。
 - 跨 MVM cow 内存共享，MVM 中热点指令强制缓存（仅 950 支持）
