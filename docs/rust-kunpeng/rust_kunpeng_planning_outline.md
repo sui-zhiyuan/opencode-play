@@ -302,3 +302,26 @@
 - Triton-CPU：推理关键算子（flash_attention/rms_norm/softmax）已有测试，但社区规模小（Stars 3、7月合入 PR 9），鲲鹏性能待实测。
 - 多后端（CUDA/Ascend/CPU）调度、打包、CI 矩阵复杂；Ascend 算子覆盖需跟随 CANN。
 
+
+## SGLang & vLLM （From Shilei）
+
+当前进度：调研
+
+### 背景 / 应用价值 / 商业价值
+
+- vLLM：UC Berkeley 发起的高吞吐 LLM 推理框架（Apache-2.0）；核心创新 PagedAttention 通过分页和写时复制管理 KV Cache，原始论文在特定实验条件下报告 2–4× 吞吐提升。
+- SGLang: LMSYS/学术团队的 LLM/VLM 推理框架（Apache-2.0）; 核心机制 RadixAttention 复用跨请求的公共 prefix KV Cache，原始论文在特定实验条件下报告最高 6.4× 吞吐提升；
+- 两者 Python 调度/模型执行为主，GPU/NPU 内核依赖 CUDA/HIP/Triton/FlashInfer；高并发解码下 CPU 侧调度、KV/prefix-cache 管理成瓶颈。
+- 商业价值：提高 batch 容量、KV Cache 利用率和加速器利用率，降低每 token 成本；vLLM 更偏通用内存与调度效率，充分利用昇腾NPU的显存；SGLang 在多轮对话、RAG、few-shot、Agent 等高重复长前缀场景中更具优势。
+
+### 应用架构 / Rust 位置
+
+- vLLM：V1 采用 API Server → Engine Core（调度与 KV Cache）→ GPU Worker 多进程架构；Rust 前端是 Python API Server 的实验性替代，已覆盖核心 OpenAI API、流式输出、部分工具调用和多 Engine 路由，尚未完全达到 Python 前端功能对齐。
+- SGLang：Python SRT 负责模型运行时和调度；Rust Model Gateway 负责 HTTP/gRPC、worker registry、缓存感知路由、Prefill/Decode 协调、限流、重试、熔断，以及 tokenizer、reasoning parser、tool-call parser。
+- 共性：Rust 主要用于 API、网络、路由、分词/解析和压测客户端，不是 GEMM、Attention、量化 kernel 的主体；张量计算仍主要依赖 PyTorch、CUDA/ROCm、Triton、C/C++ 和厂商算子库。vLLM 的第三方源码统计中 Rust 约占 7.4%；SGLang 暂无稳定、可信且可比的 Rust 占比数据。
+
+### ARM 性能亲和优化点
+- vLLM：已有 NEON、ARM BF16（ARMv8.6-A/FEAT_BF16）、Arm Compute Library/oneDNN、OpenMP 绑核及 Graviton3 验证基础；后续重点是 SVE/SVE2、INT8/INT4、PagedAttention/MoE kernel、运行时 ISA 分发，以及权重和 KV Cache 的 NUMA first-touch。
+- SGLang：已有 OpenMP 绑核、TP rank 与 NUMA/SNC 映射、torch.compile CPU 路径；但现有 CPU 性能优化主要面向 Intel Xeon/AMX，ARM 仍需补齐 NEON/BF16/SVE、cache/thread blocking、量化、MoE/Attention kernel 和 NUMA-aware 调度。
+- 技术难点：ARM CPU 代际与 ISA 差异大；量化和融合算子生态弱于 x86 AMX/CUDA；LLM CPU 推理易受内存带宽和跨 NUMA 访问限制；Python 调度、分词和 detokenizer 可能在高并发、小模型场景成为单核瓶颈。
+- 数据边界：目前未发现 vLLM 与 SGLang在相同 ARM CPU、模型、dtype、并发及输入输出长度下的官方对比数据，不能根据“支持 ARM”直接判断其具有竞争力的性能。
