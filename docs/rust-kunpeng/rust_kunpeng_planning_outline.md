@@ -177,7 +177,7 @@
 
 ### 应用架构 / Rust 位置
 
-- Rust 用户态模块
+- Rust 用户态公用模块 (11,934 行)
   - scx_utils 核心共享库：拓扑、cpumask、cgroup、energy_model、CLI、GPU/netdev/perf 等通用工具
   - scx_stats 指标传输库（+ scx_stats_derive 派生宏）
   - scx_rustland_core 用户态调度框架（scx_rustland 的决策核心）
@@ -186,8 +186,10 @@
   - scx_raw_pmu PMU 计数器访问
   - scx_cargo 构建期工具：BpfBuilder 在 build.rs 里编译 BPF C → 生成 skeleton
   - scx_bpf_compat BPF 兼容性测试（跨内核版本）
-  - total 大概 (11,934 行)
-- eBPF 内核态
+- eBPF 内核态公用模块（9,535 行）
+  - collection （堆 ，红黑树，位图，队列，B树）
+  - allocator
+  - os操作工具 （CPU 掩码，cgroup 带宽控制 CPU 拓扑 BPF arena）
 
 - scx_cosmos (NIVIDIA 开发 Rust-用户态 1960 c-内核态 1614)
   - 非饱和模式 / Local DSQ （各个CPU 维护自己的队列， 简单 round-robin）
@@ -195,19 +197,11 @@
   - 优先 GPU Numa 亲和（用户态感知，传递给内核）优先安排到对应 numa 的 cpu 上
 - scx_layered (Meta 使用 Rust-用户态 14679 c-内核态 5604)
   - CPU 归属某个 Layer ，Layer 根据自己资源决定占用的 CPU ，没有归属自动属于 open layer，超分时按 weight 分配
-  - 优先处理归属 layer 任务， 空闲时处理其他 layer 任务
-  - 线程会归属到某个 Layer，规则匹配，定时刷新
-
+  - 三种 layer ：Confined（限专属 CPU）/ Grouped（可溢出）/ Open（无专属，填空隙）
+  - CPU 优先处理归属 layer 任务， 空闲时处理其他 layer 任务 ， 有 preempt（抢占层）配置的层可以抢占 CPU 调度
+  - 线程会归属到某个 Layer，规则匹配，根据 os 事件刷新
 
 - 双层结构：Rust 用户态（加载/CLI/监控/拓扑）+ C/BPF 内核态（`struct sched_ext_ops` 回调：select_cpu/enqueue/dispatch/running/stopping/tick）。
-- Rust 代码分布（不在单一 `rust/` 目录，分四层）：
-  - `rust/`：共享库 crate；`scheds/rust/`：15 个生产级调度器二进制；`scheds/experimental/`：实验调度器；`tools/`：scxtop（可观测）/ scx_characterize（负载特征）/ scx_forge_agent（LLM 优化器）/ xtask。
-  - 内核态 C/BPF：`lib/`（btree/rbtree/topology/ravg/cgroup_bw/dhq 等）+ `scheds/include` + `scheds/vmlinux`（BTF vmlinux.h）。
-- rust/ 模块作用：scx_utils（拓扑/cpumask/cgroup/energy_model/CLI 通用工具）、scx_stats（指标传输 + derive 宏）、scx_rustland_core（用户态调度框架）、scx_arena / scx_userspace_arena（BPF arena 内存）、scx_raw_pmu（PMU 计数器）、scx_cargo（build.rs 编译 BPF）、scx_bpf_compat（BPF 兼容性测试）。
-- 调度器单体结构（以 scx_bpfland 为例）：`src/main.rs`（Rust 入口）+ `src/bpf/main.bpf.c`+`intf.h`（BPF 内核态）+ `build.rs`（scx_cargo::BpfBuilder 编译 BPF，生成 bpf_intf.rs/bpf_skel.rs）。
-- 加载机制：无独立 scx_runner 组件；各调度器为独立二进制，运行时经 scx_utils + libbpf-rs attach struct_ops。
-- 核心原语：DSQ（每 CPU 本地队列 + 自定义共享队列）；公平性 vtime / deadline 二选一或组合。
-- 安全兜底：watchdog（30s）/ SysRq-S / 进程退出 → 任何故障回退 EEVDF。
 
 ### Kunpeng 亲和优化点
 
