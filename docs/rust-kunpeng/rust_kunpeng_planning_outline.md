@@ -177,11 +177,21 @@
 
 ### 应用架构 / Rust 位置
 
-- 双层结构：Rust 用户态（加载/CLI/监控/拓扑）+ C BPF 内核态（struct sched_ext_ops 回调：select_cpu/enqueue/dispatch/running/stopping/tick）。
+- 双层结构：Rust 用户态（加载/CLI/监控/拓扑）+ C/BPF 内核态（`struct sched_ext_ops` 回调：select_cpu/enqueue/dispatch/running/stopping/tick）。
+- Rust 代码分布（不在单一 `rust/` 目录，分四层）：
+  - `rust/`：共享库 crate；`scheds/rust/`：15 个生产级调度器二进制；`scheds/experimental/`：实验调度器；`tools/`：scxtop（可观测）/ scx_characterize（负载特征）/ scx_forge_agent（LLM 优化器）/ xtask。
+  - 内核态 C/BPF：`lib/`（btree/rbtree/topology/ravg/cgroup_bw/dhq 等）+ `scheds/include` + `scheds/vmlinux`（BTF vmlinux.h）。
+- rust/ 模块作用：scx_utils（拓扑/cpumask/cgroup/energy_model/CLI 通用工具）、scx_stats（指标传输 + derive 宏）、scx_rustland_core（用户态调度框架）、scx_arena / scx_userspace_arena（BPF arena 内存）、scx_raw_pmu（PMU 计数器）、scx_cargo（build.rs 编译 BPF）、scx_bpf_compat（BPF 兼容性测试）。
+- 调度器单体结构（以 scx_bpfland 为例）：`src/main.rs`（Rust 入口）+ `src/bpf/main.bpf.c`+`intf.h`（BPF 内核态）+ `build.rs`（scx_cargo::BpfBuilder 编译 BPF，生成 bpf_intf.rs/bpf_skel.rs）。
+- 加载机制：无独立 scx_runner 组件；各调度器为独立二进制，运行时经 scx_utils + libbpf-rs attach struct_ops。
 - 核心原语：DSQ（每 CPU 本地队列 + 自定义共享队列）；公平性 vtime / deadline 二选一或组合。
 - 安全兜底：watchdog（30s）/ SysRq-S / 进程退出 → 任何故障回退 EEVDF。
 
 ### Kunpeng 亲和优化点
+
+**评估指标**
+
+- KuenPeng CPU 是否适合当前已经实现调度选型，
 
 - 现状：24.03 LTS SP4 / OLK-6.6 未启用 `CONFIG_SCHED_CLASS_EXT`；sched_ext 已在 6.12 主线，OLK-6.6 backport 见 PR !15063。
 - 内核前置：`CONFIG_SCHED_CLASS_EXT` + `BPF_SYSCALL`/`BPF_JIT`/`DEBUG_INFO_BTF`；确认 openEuler BPF JIT/BTF/pahole 在 aarch64 可用。
