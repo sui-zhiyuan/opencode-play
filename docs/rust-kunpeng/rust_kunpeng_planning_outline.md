@@ -194,6 +194,9 @@
   - 饱和模式 / Share DSQ （若当前cpu 利用率超过阈值，则进入 share DSQ，则按 deadline （累计运行时间+上次睡眠以来运行时间）排序分发到其他CPU 执行）
   - 优先 GPU Numa 亲和（用户态感知，传递给内核）优先安排到对应 numa 的 cpu 上
 - scx_layered (Meta 使用 Rust-用户态 14679 c-内核态 5604)
+  - CPU 归属某个 Layer ，Layer 根据自己资源决定占用的 CPU ，没有归属自动属于 open layer，超分时按 weight 分配
+  - 优先处理归属 layer 任务， 空闲时处理其他 layer 任务
+  - 线程会归属到某个 Layer，规则匹配，定时刷新
 
 
 - 双层结构：Rust 用户态（加载/CLI/监控/拓扑）+ C/BPF 内核态（`struct sched_ext_ops` 回调：select_cpu/enqueue/dispatch/running/stopping/tick）。
