@@ -143,7 +143,7 @@
 
 ### Kunpeng 亲和优化点
 
-**评估指标**（背景节竞争点的鲲鹏化；上游数据为 Xeon g9i，需先在 920/920B 复测）
+**评估指标**（背景节竞争点的鲲鹏化；上游数据为 Xeon g9i，需先在 950/950 v200 复测）
 
 - 启动时间：本地已有解析 OCI 缓存时的启动（OCI 复用高，冷启动降权）
 - 活跃 microVM 数量：单实例内存占用 + 线程调度/NUMA 放置（每 VM = VMM+vCPU+API 三线程，高密度数千线程；见 Sched-ext 章）
@@ -171,9 +171,9 @@
 
 ### 背景 / 应用情况 / 商业价值
 
-- sched_ext：Linux 6.12 主线 BPF 可编程调度类；scx 官方调度器集采用 Rust 用户态 + C/BPF 内核态。
-- 落地：Meta 生产（LAVD 通用默认候选；ads 分层策略 p99 -28%、省电 3.28MW、+1.1% ads ranked）；Steam Deck（CachyOS Handheld、Bazzite）。
-- 价值：无需 fork 内核即可按业务线程/NUMA/中断/GPU 协同定制调度，适合 AI 训练/推理与多路 ARM 服务器。
+- sched_ext（scx，可扩展调度器）：Linux 6.12 合入主线的内核特性，允许用 BPF 程序实现 CPU 调度器并动态加载/热更新。
+- eBPF（extended BPF）：内核内置的沙箱化字节码执行环境，用户态程序编译为 eBPF 字节码，经 verifier 静态校验 + JIT 编译后在内核态安全运行；可实现（网络 XDP / 可观测性 / 安全 / 调度）。
+- 商业价值：针对 AI 训练和推理场景，当前 Kunpeng CPU 无法满足 NPU / GPU 训练数据推入，导致 NPU / GPU 调度有空闲，降低训练效率。
 
 ### 应用架构 / Rust 位置
 
