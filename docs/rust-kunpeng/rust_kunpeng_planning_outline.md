@@ -177,6 +177,25 @@
 
 ### 应用架构 / Rust 位置
 
+- Rust 用户态模块
+  - scx_utils 核心共享库：拓扑、cpumask、cgroup、energy_model、CLI、GPU/netdev/perf 等通用工具
+  - scx_stats 指标传输库（+ scx_stats_derive 派生宏）
+  - scx_rustland_core 用户态调度框架（scx_rustland 的决策核心）
+  - scx_arena 初始化 BPF arena（内存分配器）
+  - scx_userspace_arena 用户态与 BPF arena 交互
+  - scx_raw_pmu PMU 计数器访问
+  - scx_cargo 构建期工具：BpfBuilder 在 build.rs 里编译 BPF C → 生成 skeleton
+  - scx_bpf_compat BPF 兼容性测试（跨内核版本）
+  - total 大概 (11,934 行)
+- eBPF 内核态
+
+- scx_cosmos (NIVIDIA 开发 Rust-用户态 1960 c-内核态 1614)
+  - 非饱和模式 / Local DSQ （各个CPU 维护自己的队列， 简单 round-robin）
+  - 饱和模式 / Share DSQ （若当前cpu 利用率超过阈值，则进入 share DSQ，则按 deadline （累计运行时间+上次睡眠以来运行时间）排序分发到其他CPU 执行）
+  - 优先 GPU Numa 亲和（用户态感知，传递给内核）优先安排到对应 numa 的 cpu 上
+- scx_layered (Meta 使用 Rust-用户态 14679 c-内核态 5604)
+
+
 - 双层结构：Rust 用户态（加载/CLI/监控/拓扑）+ C/BPF 内核态（`struct sched_ext_ops` 回调：select_cpu/enqueue/dispatch/running/stopping/tick）。
 - Rust 代码分布（不在单一 `rust/` 目录，分四层）：
   - `rust/`：共享库 crate；`scheds/rust/`：15 个生产级调度器二进制；`scheds/experimental/`：实验调度器；`tools/`：scxtop（可观测）/ scx_characterize（负载特征）/ scx_forge_agent（LLM 优化器）/ xtask。
