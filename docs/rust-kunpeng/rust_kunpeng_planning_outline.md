@@ -216,11 +216,29 @@
 
 **优化任务**
 
+**选型**（本质是"NPU 喂数线程优先级/隔离"，非通用负载均衡）
 
-<!-- TODO remove -->
-- 现状：24.03 LTS SP4 / OLK-6.6 未启用 `CONFIG_SCHED_CLASS_EXT`；sched_ext 已在 6.12 主线，OLK-6.6 backport 见 PR !15063。
-- 内核前置：`CONFIG_SCHED_CLASS_EXT` + `BPF_SYSCALL`/`BPF_JIT`/`DEBUG_INFO_BTF`；确认 openEuler BPF JIT/BTF/pahole 在 aarch64 可用。
-- Kunpeng 适配：优先 scx_rusty / scx_layered；验证多路 NUMA 跨 socket 迁移、绑核/内存亲和，联动灵衢链路计数器（若暴露）。
+- scx_layered 为主（训练+推理统一）：Confined/Grouped + util_range 划弹性专属 CPU 分区 + preempt + per-layer per-LLC DSQ + prox_map 读 NUMA distance；唯一能表达"喂数线程专属可抢占分区"。
+- scx_rusty 降级为通路验证：不读 NUMA distance，跨灵衢代价靠固定阈值，无法表达喂数优先级。
+- scx_cosmos 暂不适用：GPU 亲和依赖 NVML，Ascend 上 Nvml::init 失败 → 静默退化；备选 scx_bpfland（轻量推理）、scx_mitosis（混部隔离）。
+
+**实现优化点**（改代码）
+
+- Ascend NPU 拓扑感知（核心缺口）：scx_utils/gpu.rs 加 Ascend 分支（DCMI / PCI 0x19e5 / npu-smi）；layered kprobe/nvidia_* 换 davinci 入口。
+- 64K 页 arena：lib/alloc/userapi.h、asan.h 硬编码 PAGE_SIZE=4K，64K 内核下偏移错乱 → sysconf(_SC_PAGESIZE)。
+- 同构核语义：topology.rs 全判 Big{turbo:false} → --primary-domain powersave 空集，需 fallback。
+
+**配置优化点**（现有旋钮）
+
+- layered 三层 JSON：npu-feeder（Confined + util_range[0.6,0.85] + cpus_range[8,32] + preempt + nodes 钉 NPU node）+ infer-tokenizer（短 slice_us）+ catch-all（Open）。
+- 零代码 NPU 亲和：nodes 手工钉 NPU 本地 node（npu-smi info -t topo 查 numa_node）。
+- --virt-llc=4-8 对齐 CCL；xllc_mig_min_us 抑制跨灵衢迁移；--antistall-sec 防饿死；勿开 --enable-gpu-support。
+- rusty：--greedy-threshold-x-numa 0、--mempolicy-affinity；勿用 --cpumasks。
+
+**前置 / 现状**
+
+- 24.03 LTS SP4 / OLK-6.6 未启用 `CONFIG_SCHED_CLASS_EXT`，backport 见 PR !15063。
+- 前置：`CONFIG_SCHED_CLASS_EXT` + `BPF_SYSCALL`/`BPF_JIT`/`DEBUG_INFO_BTF`；aarch64 JIT/BTF/pahole 可用性待确认。
 
 ### 技术难点
 
