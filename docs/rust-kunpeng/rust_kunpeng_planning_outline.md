@@ -185,7 +185,7 @@
   - scx_userspace_arena 用户态与 BPF arena 交互
   - scx_raw_pmu PMU 计数器访问
   - scx_cargo 构建期工具：BpfBuilder 在 build.rs 里编译 BPF C → 生成 skeleton
-  - scx_bpf_compat BPF 兼容性测试（跨内核版本）
+  - scx_bpf_compat BPF 兼容性探测工具-跨内核版本用
 - eBPF 内核态公用模块（9,535 行）
   - collection （堆 ，红黑树，位图，队列，B树）
   - allocator
@@ -200,6 +200,9 @@
   - 三种 layer ：Confined（限专属 CPU）/ Grouped（可溢出）/ Open（无专属，填空隙）
   - CPU 优先处理归属 layer 任务， 空闲时处理其他 layer 任务 ， 有 preempt（抢占层）配置的层可以抢占 CPU 调度
   - 线程会归属到某个 Layer，规则匹配，根据 os 事件刷新
+- 默认策略
+  - 分优先级 DL(deadline) > RT(realtime) > FAIR(CFS/EEVDF) > IDLE
+  - 高优先级无条件高于低优先级，每层按运行时间平衡，有 NUMA 时，按 NUMA 域管理，如果 NUMA 内资源不足，则其他 NUMA 分配，
 
 - 双层结构：Rust 用户态（加载/CLI/监控/拓扑）+ C/BPF 内核态（`struct sched_ext_ops` 回调：select_cpu/enqueue/dispatch/running/stopping/tick）。
 
@@ -207,8 +210,14 @@
 
 **评估指标**
 
-- KuenPeng CPU 是否适合当前已经实现调度选型，
+- KuenPeng CPU 是否适合当前已经实现调度选型。
+- 算子下发场景 NPU 空闲时间
 
+
+**优化任务**
+
+
+<!-- TODO remove -->
 - 现状：24.03 LTS SP4 / OLK-6.6 未启用 `CONFIG_SCHED_CLASS_EXT`；sched_ext 已在 6.12 主线，OLK-6.6 backport 见 PR !15063。
 - 内核前置：`CONFIG_SCHED_CLASS_EXT` + `BPF_SYSCALL`/`BPF_JIT`/`DEBUG_INFO_BTF`；确认 openEuler BPF JIT/BTF/pahole 在 aarch64 可用。
 - Kunpeng 适配：优先 scx_rusty / scx_layered；验证多路 NUMA 跨 socket 迁移、绑核/内存亲和，联动灵衢链路计数器（若暴露）。
