@@ -207,6 +207,32 @@
 
 - 双层结构：Rust 用户态（加载/CLI/监控/拓扑）+ C/BPF 内核态（`struct sched_ext_ops` 回调：select_cpu/enqueue/dispatch/running/stopping/tick）。
 
+### 调度器列表
+
+> 共 19 个：15 生产级（`scheds/rust/`）+ 4 实验（`scheds/experimental/`）。代码量截至 2026-09 main。
+
+| 调度器 | 核心策略（含公平性） | 应用场景/目标平台 | 优势 | 劣势/限制 | 开发者/公司 | 生产就绪 | 代码量(Rust/BPF) |
+|---|---|---|---|---|---|---|---|
+| scx_bpfland | 按任务性质分类的优先级调度（拓扑感知） | 延迟敏感+批处理混合的通用桌面/服务器 | 分类清晰、可抢占、实时监控 | 需按负载调优先级参数 | Andrea Righi (Canonical) | ✅ | 994/1523 |
+| scx_cosmos | 局部性优先 + deadline 双模式（vtime+exec_vruntime） | 通用服务器/桌面、NVIDIA GPU 工作负载 | 非饱和保局部性、饱和切 deadline、GPU NUMA 亲和、cpufreq | GPU 亲和仅 NVML，Ascend 不可用 | Andrea Righi (NVIDIA) | ✅ | 1960/1614 |
+| scx_rusty | vtime + 多域负载均衡（NUMA 感知） | 通用多 NUMA 服务器 | 最早 Rust 参考实现、能耗偏好、负载均衡阈值可调 | 不读 NUMA distance，跨 socket 代价靠固定阈值 | Meta | ✅ | 2419/3685 |
+| scx_p2dq | pick-2 负载均衡 + 多层队列（LLC/CPU/mig DSQ） | 通用/游戏/大小核 | 实测≈EEVDF、大小核模式、BPF arena | 100% 饱和开销大、无 cgroup 带宽节流 | Meta | ✅ | 1585/4196 |
+| scx_lavd | 延迟关键性感知虚拟截止时间（EDF 变体） | 游戏/延迟敏感/服务器 | Steam Deck 默认、Meta 机群新默认 | BPF 代码量大（9.3k） | Valve / Changwoo Min (Igalia) | ✅ | 3321/9343 |
+| scx_layered | 多层分类 + 每层 CPU 配额（vtime，per-LLC per-layer） | 大型线上服务（明确关键路径） | Meta 生产（+5% 吞吐、ads p99-28%）、分层资源规划 | 配置复杂、需调 util_range | Meta | ✅ | 14679/5604 |
+| scx_beerland | 每核 deadline 队列 + 局部性 | 缓存密集/超多核大系统 | 非饱和零迁移、扩展性好 | 饱和期需跨核拉取 | Andrea Righi (NVIDIA) | ✅ | 608/1029 |
+| scx_flash | EDF + 动态延迟权重（提前让出 CPU 加权） | 多媒体/实时音频 | 延迟一致性、超售稳定 | 面向音频等特定负载 | Andrea Righi (NVIDIA) | ✅ | 791/1359 |
+| scx_cake | 帧感知 + 中断感知 + vtime | 游戏（低输入延迟） | 零可调参数、帧时钟对齐、算法半天可审 | 仅游戏场景 | RitzDaCat (社区) | ✅ | 1035/2274 |
+| scx_mitosis | cgroup 单元隔离（cells + 加权 vtime） | 数据中心超售/容器隔离 | 安全超售、cgroup 隔离 | 演进中、缺 preempt 语义 | Meta | ⚠️ | 6631/3888 |
+| scx_tickless | primary CPU 池 + 无限时间片 | 云/虚拟化/HPC 降噪 | 减少 OS 调度噪音 | 不适合延迟敏感、需 nohz_full | Andrea Righi (NVIDIA) | ❌ | 515/800 |
+| scx_pandemonium | 分层 + 阻尼谐振子 + 电阻亲和（迁移势 Φ） | 交互/延迟敏感 | 唤醒 p99 优于 EEVDF 2~30x | IPC/fork 密集弱、较新 | 社区 | ⚠️ | 6391/3539 |
+| scx_rustland | 用户态 Rust 决策（vtime） | 快速原型/复杂策略/教学 | 决策逻辑全在用户态、无限灵活 | 用户态往返微秒级延迟 | Andrea Righi (Canonical) | ✅(非性能关键) | 563/0 |
+| scx_forge | 可定制基础策略（per-CPU DSQ + 工作窃取） | AI 调度器开发基座 | 供 scx_forge_agent 就地演化策略 | 非成品调度器 | Andrea Righi (NVIDIA) | ❌(基座) | 1083/2055 |
+| scx_chaos | 故意制造混乱（基于 p2dq） | 测试/调试 race condition | 暴露时序 bug、CI 集成 | 故意降性能、禁生产 | Meta | ❌ | 1058/778 |
+| scx_mlfq | 多级反馈队列 | 实验/教学 | 经典 OS 算法原型 | 实验 | Galih Tama | ❌ | 1676/2416 |
+| scx_flow | 流导向原型 | 实验 | 数据流原型 | 实验 | Galih Tama | ❌ | 879/861 |
+| scx_nitosis | cgroup 隔离（mitosis 演进） | 实验 | cgroup 隔离演进 | 实验 | Meta | ❌ | 6133/3562 |
+| scx_rlfifo | 限速 FIFO | 实验 | 限速原型 | 实验 | Andrea Righi | ❌ | 256/0 |
+
 ### Kunpeng 亲和优化点
 
 **评估指标**
