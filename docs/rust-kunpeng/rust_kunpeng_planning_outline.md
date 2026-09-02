@@ -195,6 +195,7 @@
   - 非饱和模式 / Local DSQ （各个CPU 维护自己的队列， 简单 round-robin）
   - 饱和模式 / Share DSQ （若当前cpu 利用率超过阈值，则进入 share DSQ，则按 deadline （累计运行时间+上次睡眠以来运行时间）排序分发到其他CPU 执行）
   - 优先 GPU Numa 亲和（用户态感知，传递给内核）优先安排到对应 numa 的 cpu 上
+  - 用户态功能  CLI 参数解析 / 拓扑发现与初始化 /  GPU 感知 / 动态阈值自调 / 指标监控 / 装载卸载调度器
 - scx_layered (Meta 使用 Rust-用户态 14679 c-内核态 5604)
   - CPU 归属某个 Layer ，Layer 根据自己资源决定占用的 CPU ，没有归属自动属于 open layer，超分时按 weight 分配
   - 三种 layer ：Confined（限专属 CPU）/ Grouped（可溢出）/ Open（无专属，填空隙）
