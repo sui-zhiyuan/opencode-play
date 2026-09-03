@@ -316,9 +316,35 @@
 
 ### 应用架构 / Rust 位置
 
-- vLLM：V1 采用 API Server → Engine Core（调度与 KV Cache）→ GPU Worker 多进程架构；Rust 前端是 Python API Server 的实验性替代，已覆盖核心 OpenAI API、流式输出、部分工具调用和多 Engine 路由，尚未完全达到 Python 前端功能对齐。
-- SGLang：Python SRT 负责模型运行时和调度；Rust Model Gateway 负责 HTTP/gRPC、worker registry、缓存感知路由、Prefill/Decode 协调、限流、重试、熔断，以及 tokenizer、reasoning parser、tool-call parser。
-- 共性：Rust 主要用于 API、网络、路由、分词/解析和压测客户端，不是 GEMM、Attention、量化 kernel 的主体；张量计算仍主要依赖 PyTorch、CUDA/ROCm、Triton、C/C++ 和厂商算子库。vLLM 的第三方源码统计中 Rust 约占 7.4%；SGLang 暂无稳定、可信且可比的 Rust 占比数据。
+- vLLM（分层：API → 调度 → KV cache → 批处理 → 张量执行；V1 = API Server → Engine Core → GPU Worker 多进程）
+  - API 接口：Python（fastapi/starlette）+ Rust 前端（rust/src/server，实验性，未完全对齐 Python）
+  - 任务调度：Python（vllm/v1 Engine Core：scheduler + continuous batching / chunked prefill）
+  - KV cache：Python 管理（PagedAttention 分页 block manager）+ 自研 CUDA kernel（csrc/attention）
+  - 批处理：Python（continuous batching）
+  - 底层张量执行：外部 PyTorch（torch）；高性能算子自研 CUDA/C++（csrc/quantization、moe）+ 外部 flashinfer/triton/CUTLASS
+  - 语言构成：Python 主体 + CUDA/C++（csrc）+ Rust（rust/，约 7.4%）
+
+- vLLM 模块视角（自研 vs 引用外部，含语言）
+  - 自研 Python（vllm/）：V1 Engine Core（scheduler + KV cache manager）、model_executor（layers/models）、distributed（TP/PP）、entrypoints（OpenAI API server）
+  - 自研 CUDA/C++（csrc/）：attention（PagedAttention）、quantization（GPTQ/AWQ/Marlin/FP8）、moe、cpu（ARM NEON/bfmmla + x86 AMX + oneDNN）、cumem_allocator
+  - 自研 Rust（rust/，约 7.4%）：server（axum OpenAI 兼容）、engine-core-client（ZMQ+msgpack 协议）、tokenizer/detokenizer、parser（PyO3 绑定回灌 Python）
+  - 引用外部 Python import：torch / transformers / huggingface_hub / tokenizers / flashinfer / triton / xformers / fastapi / xgrammar 等
+  - 引用外部 Cargo use：pyo3 / axum / hyper / tokio / fastokens / prost / parquet 等
+  - 无 git submodule（.gitmodules 不存在）；第三方 kernel 经 pip（flashinfer/triton）或 vendor 复制进仓库（vllm/third_party：flash_linear_attention / flashmla / pynvml.py）
+
+- SGLang（分层同 vLLM，差异在 KV 前缀复用与结构化生成）
+  - API 接口：Python（fastapi）+ Rust Model Gateway（HTTP/gRPC、worker registry、缓存感知路由、Prefill/Decode 协调、限流/重试/熔断）
+  - 任务调度：Python（SRT runtime：continuous batching）
+  - KV cache：Python 管理（RadixAttention 前缀树复用）+ 外部 flashinfer/triton kernel
+  - 批处理：Python（RadixAttention 前缀复用 + 连续批处理）
+  - 底层张量执行：外部 PyTorch；结构化生成用外部 xgrammar/llguidance
+  - 语言构成：Python 主体 + Rust（sglang-server / model gateway）
+
+- 共性 / Rust 位置
+  - Rust 切入点：API frontend、tokenizer/detokenizer、解析器、路由、压测客户端；非 GEMM/Attention/量化 kernel 主体
+  - 模型执行/算子：Python + CUDA/ROCm/Triton 主导（自研 csrc + 外部 flashinfer/triton/CUTLASS）
+  - 无 git submodule；第三方 kernel 经 pip（flashinfer/triton）或 vendor 复制（vllm/third_party）引入
+
 
 ### ARM 性能亲和优化点
 - vLLM：已有 NEON、ARM BF16（ARMv8.6-A/FEAT_BF16）、Arm Compute Library/oneDNN、OpenMP 绑核及 Graviton3 验证基础；后续重点是 SVE/SVE2、INT8/INT4、PagedAttention/MoE kernel、运行时 ISA 分发，以及权重和 KV Cache 的 NUMA first-touch。
