@@ -203,6 +203,8 @@
   - 线程会归属到某个 Layer，规则匹配，根据 os 事件刷新
 
   scx_layered 的 Rust 用户态 = **"配置解析 + 拓扑/邻近图初始化 + BPF 加载下发 + 每层 CPU 动态分配闭环（water-fill + 层增长，最重）+ GPU 亲和 + xNUMA 速率 + 内存带宽 + 指标"。它最独特、最重的部分是"按 util_range/weight 用 water-fill 动态给每层分配 CPU"**——这是 scx_cosmos（自动双模式）完全没有的"空间资源规划"逻辑，也是它 14.6k 行 Rust 远超 cosmos 1.9k 行的根本原因。
+
+  CPU 分配闭环
 - 默认策略
   - 分优先级 DL(deadline) > RT(realtime) > FAIR(CFS/EEVDF) > IDLE
   - 高优先级无条件高于低优先级，每层按运行时间平衡，有 NUMA 时，按 NUMA 域管理，如果 NUMA 内资源不足，则其他 NUMA 分配，
