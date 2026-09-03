@@ -290,6 +290,20 @@
 - 社区：rvllm / vllm.rs 为纯 Rust serving 探索，非官方主线。
 - 结论：Rust 切入点集中在 API frontend、tokenizer/detokenizer、KV/调度控制面；模型执行/算子仍由 Python + CUDA/Triton 主导。
 
+### Rust 迁移计划
+
+- SGLang（激进，正式 RFC + 里程碑）
+  - 总纲 #22949（Q2 2026 roadmap）："gradually rewrite most components (scheduler, api server, prefix tree) in Rust"。
+  - #23206 non-GPU rust migration：请求前半段（网络入口→tokenize→交 GPU scheduler）迁多线程 Rust；范围外 = model kernels/attention/KV-cache/量化；drop-in + Python fallback；里程碑 2026-07-17。
+  - #22558 Native gRPC 5 阶段：Rust tokenization → 全 Python bypass（零 GIL）。
+  - #28420 UnifiedRadixCache 主干 Rust 化：纯 CPU-bound 树逻辑（拓扑/匹配/索引/LRU/锁/eviction）迁 Rust。
+  - 分界线：GPU compute 留 Python，CPU-bound 控制流迁 Rust。
+- vLLM（保守，仅 front-end）
+  - #40846 Rust front-end RFC：Rust 重写 API server 层（drop-in，`VLLM_USE_RUST_FRONTEND=1`，经 ZMQ 连 Python engine）；明确"暂不替换 Python front-end"。
+  - #44280 Rust Frontend Feature Parity roadmap；Q3 2026 目标"标生产就绪"。
+  - 范围：仅 northbound serving 层（HTTP/chat/tokenizer/tool-parser），不碰 scheduler/KV cache/kernel。
+- 对比：SGLang 激进（front-end + gRPC + prefix tree + gateway 全 Rust 化）vs vLLM 保守（仅 API server 层，试探性）。
+
 ### Kunpeng 亲和优化点
 
 - 编译/图缓存：torch.compile/Inductor 在 AArch64 已可用（Graviton3 NLP geomean ~2x）但需鲲鹏实测；vLLM vllm/ir + 编译缓存降低下发前开销。
