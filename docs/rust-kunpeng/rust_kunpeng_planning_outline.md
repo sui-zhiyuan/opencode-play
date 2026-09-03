@@ -361,10 +361,64 @@
 
 
 ### ARM 性能亲和优化点
-- vLLM：已有 NEON、ARM BF16（ARMv8.6-A/FEAT_BF16）、Arm Compute Library/oneDNN、OpenMP 绑核及 Graviton3 验证基础；后续重点是 SVE/SVE2、INT8/INT4、PagedAttention/MoE kernel、运行时 ISA 分发，以及权重和 KV Cache 的 NUMA first-touch。
-- SGLang：已有 OpenMP 绑核、TP rank 与 NUMA/SNC 映射、torch.compile CPU 路径；但现有 CPU 性能优化主要面向 Intel Xeon/AMX，ARM 仍需补齐 NEON/BF16/SVE、cache/thread blocking、量化、MoE/Attention kernel 和 NUMA-aware 调度。
-- 技术难点：ARM CPU 代际与 ISA 差异大；量化和融合算子生态弱于 x86 AMX/CUDA；LLM CPU 推理易受内存带宽和跨 NUMA 访问限制；Python 调度、分词和 detokenizer 可能在高并发、小模型场景成为单核瓶颈。
-- 数据边界：目前未发现 vLLM 与 SGLang在相同 ARM CPU、模型、dtype、并发及输入输出长度下的官方对比数据，不能根据“支持 ARM”直接判断其具有竞争力的性能。
+
+**优化目标**（CPU 侧强相关指标）
+
+| 指标 | 为何 CPU 侧相关 | 鲲鹏映射 |
+|---|---|---|
+| TTFT | tokenize → 调度 → prefill 下发串行在 CPU | 单核弱 + 无 SMT 放大串行路径 |
+| TPOT / ITL | decode 每步固定 CPU 开销（scheduler step、KV 分配、detokenize、序列化） | NPU 越快 CPU 占比越凸显 |
+| CPU overhead ratio | event_loop 单线程 Python，overlap 只隐藏部分后处理 | 无 SMT + 单核弱 → 天然偏高 |
+| tokenizer/detokenizer 时延 | 每 token 一次 PyO3 调用 / 单线程入口 | 高并发单核封顶，需多核摊 |
+| 跨 NUMA 访问率 | KV cache / SHM / ZMQ 消息跨 node 分配 | 灵衢跨片代价 > Xeon UPI |
+| 内存带宽利用率 | CPU 推理 decode 带宽受限 | NEON 128-bit load 有限，SVE2 更宽 |
+| p99 延迟 | GC / 自旋 / KV 回收 / 页迁移 | 无 SMT 自旋独占核；64K 页降 TLB miss |
+| prefix-cache 命中开销 | hash / radix 每请求 CPU 热路径 | ARMv8 Crypto 指令加速 sha256 |
+
+**优化方案**（按领域）
+
+- SIMD kernel（SVE2 补齐 + ISA 运行时分发）
+  - vLLM：csrc/cpu 新增 SVE2 attention（仿 cpu_attn_rvv.hpp 加 cpu_attn_sve.hpp，svmla_f32 + 谓词消 K-tail 标量循环；BF16 用 BFMMLA/BFDOT）
+  - vLLM：aarch64 补 FAST_SPINNING（`isb` 替代 `std::this_thread::yield()` 退化，cpu_arch_macros.h）
+  - vLLM：WNA16 量化 GEMM 补 ARM（vmmlaq_s32 i8mm / vdotq_s32 dotprod，解除 torch_bindings.cpp 的 AVX512-only gating）
+  - vLLM：int8 micro-GEMM 920 兼容（dotprod fallback，当前 SMMLA gated 在 ARM_I8MM）
+  - vLLM：运行时 ISA 分发（cmake/cpu_extension.cmake 多 variant + platforms/cpu.py import_kernels 按 HWCAP 选，解决 920/950 ISA 碎片化）
+  - SGLang：补齐 aarch64 kernel（decode/extend 的 NEON-BFMMLA/SVE2，替换 torch_native 默认后端）
+  - SGLang：解除 AMX-only gating（cpu_has_amx_support → cpu_has_fast_kernel，FP8 KV cache / W8A8 在鲲鹏可用）
+
+- NUMA / 绑核（灵衢、无 SMT）
+  - vLLM：跨 socket 拒绝 interleave、per-rank membind（csrc/cpu/utils.cpp 按 node distance 阈值分级）
+  - vLLM：ARM autobind 保留调度核（ompmultiprocessing.py reserve_cpu_num≥2，避免 OMP 与 engine loop 争抢）
+  - SGLang：修正 HT-sibling 拓扑假设（aarch64 physical==logical，numa_utils.py）
+  - SGLang：tokenizer/detokenizer 独立绑核到保留核
+
+- tokenizer / detokenizer
+  - vLLM：推广 Rust 增量 detokenizer（rust/src/tokenizer，无 GIL，多 worker）
+  - SGLang：dynamic batch tokenizer 扩展并行度（max_workers 可配 + 按请求分片）
+  - SGLang：detokenizer 批量化（np.clip 向量化替代逐 token Python 循环）
+
+- scheduler / KV manager
+  - vLLM：prefix-cache hash 走 ARMv8 Crypto（sha256 在鲲鹏接近 xxhash，且跨实例一致）
+  - SGLang：启用 C++ RadixTree（cpp_radix_tree，替换 Python radix_cache.py 树遍历）
+  - 共同：scheduler 关键路径瘦身（vLLM schedule() 103 循环；SGLang 多模态预处理下沉独立进程）
+
+- 内存带宽
+  - vLLM：SHM allreduce 非临时访问（SVE svldnt1/svstnt1，替代失效的 NEON nt_save）
+  - vLLM：L2 tile sizing 校准（get_available_l2_size 验证鲲鹏 L2 上报，避免 tile thrash）
+
+- 64K 页
+  - 共同：KV cache / SHM / scratchpad 池按 sysconf(_SC_PAGESIZE) 对齐 + MADV_HUGEPAGE；tcmalloc 需 64K page 构建（TCMALLOC_PAGE_SIZE）
+
+- Runtime 生态
+  - vLLM：ACL 构建带 SVE2 + multi_isa（oneDNN 后端）+ 评估鲲鹏 KML（BoostKit）BLAS 接管 GEMM
+  - SGLang：ARM 默认后端从 torch_native 升级到 sgl-kernel ARM 实现（短期可先 torch.compile CPP backend 缓解）
+
+**现状与难点**
+
+- vLLM：已有 NEON、ARM BF16（ARMv8.6-A/FEAT_BF16）、Arm Compute Library/oneDNN、OpenMP 绑核及 Graviton3 验证基础；ARM 基础明显领先 SGLang。
+- SGLang：已有 OpenMP 绑核、TP rank 与 NUMA/SNC 映射、torch.compile CPU 路径；但 CPU 快路径几乎全部 Intel AMX-gated，鲲鹏适配工作量主要在 kernel 补齐与 gating 解除。
+- 技术难点：ARM CPU 代际与 ISA 差异大；量化和融合算子生态弱于 x86 AMX/CUDA；LLM CPU 推理易受内存带宽和跨 NUMA 访问限制；Python 调度、分词和 detokenizer 高并发单核瓶颈。
+- 数据边界：未发现 vLLM 与 SGLang 在相同 ARM CPU / 模型 / dtype / 并发 / 长度下的官方对比数据，不能根据"支持 ARM"直接判断其有竞争力性能。
 
 
 ## Summary
