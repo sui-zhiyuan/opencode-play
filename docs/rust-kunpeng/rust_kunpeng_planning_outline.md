@@ -325,3 +325,18 @@
 - SGLang：已有 OpenMP 绑核、TP rank 与 NUMA/SNC 映射、torch.compile CPU 路径；但现有 CPU 性能优化主要面向 Intel Xeon/AMX，ARM 仍需补齐 NEON/BF16/SVE、cache/thread blocking、量化、MoE/Attention kernel 和 NUMA-aware 调度。
 - 技术难点：ARM CPU 代际与 ISA 差异大；量化和融合算子生态弱于 x86 AMX/CUDA；LLM CPU 推理易受内存带宽和跨 NUMA 访问限制；Python 调度、分词和 detokenizer 可能在高并发、小模型场景成为单核瓶颈。
 - 数据边界：目前未发现 vLLM 与 SGLang在相同 ARM CPU、模型、dtype、并发及输入输出长度下的官方对比数据，不能根据“支持 ARM”直接判断其具有竞争力的性能。
+
+
+## Summary
+
+一、Rust 语言生态 Kunepeng 亲和
+
+1. 以 Daft + Lance 为核心，构建 AI 训练数据预处理，在文本/PDF/智驾 典型场景，提高其在 Kunpeng 950 代际集群处理速度，相对 Zen 5 提升 10%。
+2. 针对 SIMD 加速场景，提供符合 rust 语言风格的基础库，降低上层应用优化过程中使用难度，用较少工作流将社区针对 x86 架构 simd 优化同步到 arm 架构。达成针对 simd 场景优化不使用 unsafe，根据当前 CPU 自动适配 neon/sve 指令。 
+3. 以 PyO3 和 rust-std 为核心，针对 Kunpeng CPU 优化 Rust 社区广泛使用的基础库，在标准 benchmark 中提高 10%。
+
+二、交付物
+
+1. 鲲鹏亲和项目 需求分析/系统设计/功能设计文档。
+2. Daft/Lance 和其依赖的 arrow / snap / py03 / rustc 库开源社区代码。
+3. 发起 portal-simd 开源项目，开源社区代码
