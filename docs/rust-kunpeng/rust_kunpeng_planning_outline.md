@@ -329,14 +329,14 @@
 
 ## Summary
 
-一、Rust 语言生态 Kunepeng 亲和
+一、Rust 语言生态 Kunpeng 亲和
 
-1. 以 Daft + Lance 为核心，构建 AI 训练数据预处理，在文本/PDF/智驾 典型场景，提高其在 Kunpeng 950 代际集群处理速度，相对 Zen 5 提升 10%。
-2. 针对 SIMD 加速场景，提供符合 rust 语言风格的基础库，降低上层应用优化过程中使用难度，用较少工作流将社区针对 x86 架构 simd 优化同步到 arm 架构。达成针对 simd 场景优化不使用 unsafe，根据当前 CPU 自动适配 neon/sve 指令。 
-3. 以 PyO3 和 rust-std 为核心，针对 Kunpeng CPU 优化 Rust 社区广泛使用的基础库，在标准 benchmark 中提高 10%。
+1. 以 Daft + Lance 为核心，构建面向 AI 训练的数据预处理能力；在文本 / PDF / 智驾等典型场景下，使数据预处理在 Kunpeng 950 代际集群上的处理速度相对 Zen 5 提升 10%。
+2. 针对 SIMD 加速场景，提供符合 Rust 语言风格的基础库（Portable-Simd），降低上层应用优化过程中的使用难度；以较低成本将社区针对 x86 架构的 SIMD 优化同步到 ARM 架构，实现 SIMD 场景优化无需使用 unsafe、并根据当前 CPU 自动适配 NEON / SVE 指令。
+3. 以 PyO3 与 rust-std 为核心，针对 Kunpeng CPU 优化 Rust 社区广泛使用的基础库，在自身 benchmark 中性能提升 10%。
 
 二、交付物
 
-1. 鲲鹏亲和项目 需求分析/系统设计/功能设计文档。
-2. Daft/Lance 和其依赖的 arrow / snap / py03 / rustc 库开源社区代码。
-3. 发起 portal-simd 开源项目，开源社区代码
+1. 鲲鹏亲和项目的需求分析 / 系统设计 / 功能设计文档。
+2. Daft / Lance 及其依赖的 arrow / snap / PyO3 / rustc 等库的开源社区代码。
+3. 发起 Portable-Simd 开源项目，并开源社区代码。
