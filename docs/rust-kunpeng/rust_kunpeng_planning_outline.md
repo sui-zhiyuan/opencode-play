@@ -141,6 +141,38 @@
   - 都基于 rust-vmm + KVM
   - CoW 路径差异：内存 CoW / template fork（AgentENV）vs 磁盘 CoW / XFS reflink（CubeSandbox）
 
+### CubeSandbox 架构模块清单
+
+> 仓库实测（3594 文件）：Go 控制面 + Rust 性能安全关键路径（~48% 代码量）+ C eBPF/SPDK + Lua 数据面。
+
+| 层 | 模块 | 说明 | 语言 |
+|---|---|---|---|
+| 控制面 | CubeAPI | E2B 兼容 REST 网关（axum / governor 限流） | Rust |
+| 控制面 | CubeMaster | 集群编排，调度到节点 Cubelet | Go |
+| 控制面 | CubeOps | 运维后台（WebUI / 监控 / AgentHub / 认证） | Go |
+| 控制面 | CubeDB | DB 迁移 + 数据访问（MySQL 集群锁） | Go+SQL |
+| 控制面 | cube-lifecycle-manager | AutoPause / AutoResume 协调（Redis 事件流） | Go |
+| 网络 | CubeProxy | E2B 协议反向代理 | Lua（OpenResty） |
+| 网络 | CubeEgress | L7 出口网关（过滤 / 凭据注入 / CA）+ nginx TPROXY patch | Lua+C |
+| 网络 | CubeNet / CubeVS | eBPF 虚拟交换机（隔离 / egress / DNS / SNAT） | Go+C（eBPF） |
+| 节点 | Cubelet | 节点生命周期管理（最大 Go 模块，702 .go） | Go |
+| 节点 | CubeShim | containerd Shim v2，cube-hypervisor 作库链接，vsock+ttrpc | Rust |
+| 虚拟化 | cube-hypervisor | Cloud Hypervisor v28 fork（~34 crate，rust-vmm 底座） | Rust |
+| Guest | guest-init | 极简 PID 1 | Rust |
+| Guest | cube-agent | Kata agent fork（rustjail + libs + vsock-exporter，~8 crate） | Rust |
+| 存储 | cubecow（CubeCoW） | XFS reflink CoW，lib+cdylib+staticlib 供 CGO | Rust（C ABI） |
+| 存储 | CubeS3lvol | SPDK / DPDK NVMe/TCP target（S3 后端） | C |
+| 共享/SDK | pkgs | CubeLog + proto（Cubelet↔CubeMaster） | Go |
+| 共享/SDK | sdk | E2B 兼容客户端（go / node / python） | Go/TS/Python |
+| 前端 | web | Dashboard（Vite + React + Tailwind） | TypeScript |
+| 部署 | deploy | Terraform / K8s / systemd | Shell+HCL+YAML |
+
+**语言构成**：Go 1395 文件（控制面/节点）> Rust 400（性能安全关键路径）> Python 185 > Shell 267 > TS 101 > SQL 54 > C 50 > Lua 32。
+
+**跨语言边界**：① Cubelet（Go）→CGO→ cubecow（Rust）；② CubeVS Go 控制面加载 C eBPF；③ CubeShim（Rust）链接整个 hypervisor workspace。
+
+**注**：本地 `cubesandbox-rust-analysis.md` 仅覆盖 Rust 五大件，遗漏 Go 控制面/网络/存储/SDK/web 等 12 模块，此处已补齐。
+
 ### Kunpeng 亲和优化点
 
 **评估指标**（背景节竞争点的鲲鹏化；上游数据为 Xeon g9i，需先在 950/950 v200 复测）
